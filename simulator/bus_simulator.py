@@ -20,8 +20,32 @@ except ImportError:
     USE_HTTPX = False
 
 
+import threading
+import queue
+import httpx
+
+api_queue = queue.Queue()
+
+def api_worker():
+    while True:
+        task = api_queue.get()
+        if task is None:
+            break
+        url, data = task
+        
+        try:
+            r = httpx.post(url, json=data, timeout=3.0)
+            r.raise_for_status()
+        except Exception as e:
+            pass # Silently drop bus positions on failure to avoid spam, we rely on incident queue for logs
+        
+        api_queue.task_done()
+
+worker_thread = threading.Thread(target=api_worker, daemon=True)
+worker_thread.start()
+
 def post_bus_position(bus_id, lat, lng, speed, route_name, backend_url):
-    """Send bus position update to backend."""
+    """Send bus position update to background queue."""
     data = {
         "bus_id": bus_id,
         "lat": round(lat, 6),
@@ -29,21 +53,7 @@ def post_bus_position(bus_id, lat, lng, speed, route_name, backend_url):
         "speed": round(speed, 1),
         "route_name": route_name,
     }
-    try:
-        if USE_HTTPX:
-            import httpx
-            httpx.post(f"{backend_url}/api/buses/position", json=data, timeout=3.0)
-        else:
-            payload = json_module.dumps(data).encode('utf-8')
-            req = urllib.request.Request(
-                f"{backend_url}/api/buses/position",
-                data=payload,
-                headers={'Content-Type': 'application/json'},
-                method='POST'
-            )
-            urllib.request.urlopen(req, timeout=3)
-    except Exception as e:
-        pass  # Silently ignore connection errors during simulation
+    api_queue.put((f"{backend_url}/api/buses/position", data))
 
 
 def run_bus(bus_id, route_name, video_path, speed_multiplier=10, backend_url="http://localhost:8000"):
@@ -86,17 +96,23 @@ def run_bus(bus_id, route_name, video_path, speed_multiplier=10, backend_url="ht
         lat, lng = interpolate_position(waypoints, progress)
         segment_idx = get_segment_index(waypoints, progress)
         
-        # Estimate speed (km/h) — simulated
-        speed = 20 + 20 * abs(0.5 - progress)  # Varies 20-30 km/h
+        # Estimate speed (km/h) - simulated, occasionally goes over 40 limit
+        base_speed = 20 + 30 * abs(0.5 - progress)  # Varies 20-35 km/h
+        # Add random bursts of speed for overspeeding demo
+        import random
+        if random.random() < 0.05:
+            speed = base_speed + random.uniform(15, 30)
+        else:
+            speed = base_speed + random.uniform(-5, 5)
         
-        # Send position update every 30 frames
-        if frames_processed % 30 == 0:
+        # Send position update every 150 frames to prevent backend flood
+        if frames_processed % 150 == 0:
             post_bus_position(bus_id, lat, lng, speed, route_name, backend_url)
             elapsed = time.time() - start_time
             print(f"  [{bus_id}] Progress: {progress*100:.1f}% | GPS: ({lat:.4f}, {lng:.4f}) | Elapsed: {elapsed:.1f}s")
         
         # Process frame through Deck-AI
-        detector.process_frame(frame, lat, lng, bus_id, route_name, segment_idx)
+        detector.process_frame(frame, lat, lng, bus_id, route_name, segment_idx, speed)
         
         frames_processed += 1
         

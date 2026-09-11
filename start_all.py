@@ -1,5 +1,5 @@
 """
-start_all.py — One-command launcher for the Urban Intelligence Platform.
+start_all.py One-command launcher for the Urban Intelligence Platform.
 
 Starts backend, frontend dev server, seeds mock data, and launches the bus simulator.
 Usage: python start_all.py [--buses N] [--speed X]
@@ -23,7 +23,7 @@ processes = []
 
 def cleanup(signum=None, frame=None):
     """Kill all child processes."""
-    print("\n🛑 Shutting down all services...")
+    print("\n Shutting down all services...")
     for name, proc in processes:
         if proc.poll() is None:
             print(f"  Stopping {name}...")
@@ -32,7 +32,7 @@ def cleanup(signum=None, frame=None):
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 proc.kill()
-    print("✅ All services stopped.")
+    print(" All services stopped.")
     sys.exit(0)
 
 
@@ -52,11 +52,11 @@ def main():
     signal.signal(signal.SIGTERM, cleanup)
 
     print("=" * 60)
-    print("🚌  Urban Intelligence Platform — Starting All Services")
+    print("=== Urban Intelligence Platform - Starting All Services ===")
     print("=" * 60)
 
     # 1. Start Backend
-    print("\n📡 Starting backend server on http://localhost:8000 ...")
+    print("\n Starting backend server on http://localhost:8000 ...")
     backend_proc = subprocess.Popen(
         [VENV_PYTHON, "-m", "uvicorn", "backend.main:app",
          "--host", "0.0.0.0", "--port", "8000"],
@@ -68,14 +68,14 @@ def main():
     time.sleep(3)
 
     if backend_proc.poll() is not None:
-        print("❌ Backend failed to start!")
+        print(" Backend failed to start!")
         cleanup()
         return
 
-    print("✅ Backend started.")
+    print(" Backend started.")
 
     # 2. Seed mock data
-    print("\n🌱 Seeding demo data...")
+    print("\n Seeding demo data...")
     try:
         import urllib.request
         req = urllib.request.Request(
@@ -86,9 +86,9 @@ def main():
         with urllib.request.urlopen(req, timeout=10) as resp:
             import json
             result = json.loads(resp.read())
-            print(f"✅ {result['message']}")
+            print(f" {result['message']}")
     except Exception as e:
-        print(f"⚠️  Seeding failed: {e}")
+        print(f" Seeding failed: {e}")
 
     # 3. Start Frontend (if Node.js available)
     if not args.no_frontend:
@@ -97,7 +97,7 @@ def main():
         try:
             # Check if node_modules exists
             if not os.path.exists(os.path.join(frontend_dir, "node_modules")):
-                print("\n📦 Installing frontend dependencies...")
+                print("\n Installing frontend dependencies...")
                 subprocess.run(
                     [npm_cmd, "install"],
                     cwd=frontend_dir,
@@ -105,7 +105,7 @@ def main():
                     timeout=120,
                 )
 
-            print("\n🖥️  Starting frontend on http://localhost:3000 ...")
+            print("\n Starting frontend on http://localhost:3000 ...")
             frontend_proc = subprocess.Popen(
                 [npm_cmd, "run", "dev"],
                 cwd=frontend_dir,
@@ -114,17 +114,17 @@ def main():
             )
             processes.append(("Frontend", frontend_proc))
             time.sleep(3)
-            print("✅ Frontend started.")
+            print(" Frontend started.")
         except FileNotFoundError:
-            print("⚠️  Node.js/npm not found. Skipping frontend.")
+            print(" Node.js/npm not found. Skipping frontend.")
             print("   Install Node.js and run: cd frontend && npm install && npm run dev")
         except Exception as e:
-            print(f"⚠️  Frontend failed: {e}")
+            print(f" Frontend failed: {e}")
 
     # 4. Generate sample video if needed
     video_path = os.path.join(PROJECT_ROOT, "simulator", "sample_videos", "sample_road.mp4")
     if not os.path.exists(video_path):
-        print("\n🎬 Generating sample road video...")
+        print("\n Generating sample road video...")
         subprocess.run(
             [VENV_PYTHON, os.path.join(PROJECT_ROOT, "simulator", "sample_videos", "generate_sample.py")],
             cwd=PROJECT_ROOT,
@@ -133,7 +133,7 @@ def main():
 
     # 5. Start Simulator
     if not args.no_simulator:
-        print(f"\n🚌 Starting bus simulator ({args.buses} buses, {args.speed}x speed)...")
+        print(f"\n Starting bus simulator ({args.buses} buses, {args.speed}x speed)...")
         time.sleep(2)
         sim_proc = subprocess.Popen(
             [VENV_PYTHON, "-m", "simulator.bus_simulator",
@@ -143,11 +143,11 @@ def main():
             cwd=PROJECT_ROOT,
         )
         processes.append(("Simulator", sim_proc))
-        print("✅ Simulator started.")
+        print(" Simulator started.")
 
     # Summary
     print("\n" + "=" * 60)
-    print("🚀 All services running!")
+    print(" All services running!")
     print("   Backend:    http://localhost:8000")
     print("   Dashboard:  http://localhost:3000")
     print("   API Docs:   http://localhost:8000/docs")
@@ -157,9 +157,15 @@ def main():
     # Wait for any process to exit
     try:
         while True:
-            for name, proc in processes:
+            for name, proc in list(processes):
                 if proc.poll() is not None:
-                    print(f"⚠️  {name} exited with code {proc.returncode}")
+                    if proc.returncode == 0:
+                        print(f"\n [SUCCESS] {name} completed successfully.")
+                    else:
+                        print(f"\n [FAILURE] {name} exited with error code {proc.returncode}")
+                    processes.remove((name, proc))
+            if not processes:
+                break
             time.sleep(2)
     except KeyboardInterrupt:
         cleanup()

@@ -22,4 +22,25 @@ Thumbs.db
 # data/*.mp4
 
 data/urban_intel.db
+data/snapshots/# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+frontend/dist/
+
+# Local database/runtime files
+data/*.db-shm
+data/*.db-wal
+
+# Simulator/runtime output
+sim_output.txt
+sim_success.txt
+append.txt
+temp_append.py
+tatus
+
+# Runtime snapshots
 data/snapshots/

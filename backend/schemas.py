@@ -14,6 +14,10 @@ class IncidentCreate(BaseModel):
     image_path: Optional[str] = None
     plate_number: Optional[str] = None
     contact_number: Optional[str] = None
+    current_speed: Optional[float] = None
+    speed_limit: Optional[float] = None
+    current_lane: Optional[str] = None
+    expected_lane: Optional[str] = None
 
 class IncidentPublic(BaseModel):
     """Citizen view — no bus_id, no contact info."""
@@ -25,6 +29,10 @@ class IncidentPublic(BaseModel):
     accuracy: float
     severity: Severity
     image_path: Optional[str] = None
+    current_speed: Optional[float] = None
+    speed_limit: Optional[float] = None
+    current_lane: Optional[str] = None
+    expected_lane: Optional[str] = None
     
     model_config = {"from_attributes": True}
 

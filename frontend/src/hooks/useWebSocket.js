@@ -12,16 +12,18 @@ export default function useWebSocket() {
   useEffect(() => {
     let timeoutId = null;
     
+    let isMounted = true;
     function connect() {
       const wsUrl = `ws://${window.location.hostname}:8000/ws`
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
       ws.onopen = () => {
-        setConnected(true)
+        if (isMounted) setConnected(true)
       }
 
       ws.onmessage = (event) => {
+        if (!isMounted) return;
         try {
           const data = JSON.parse(event.data)
           if (data.event === 'new_incident') {
@@ -44,7 +46,7 @@ export default function useWebSocket() {
             })
           } else if (data.event === 'accident_alert') {
             setAlert(data.data)
-            setTimeout(() => setAlert(null), 15000)
+            setTimeout(() => { if (isMounted) setAlert(null) }, 15000)
           }
         } catch (err) {
           console.error("Failed to parse websocket message", err)
@@ -52,6 +54,7 @@ export default function useWebSocket() {
       }
 
       ws.onclose = () => {
+        if (!isMounted) return;
         setConnected(false)
         timeoutId = setTimeout(connect, 3000)
       }
@@ -64,6 +67,7 @@ export default function useWebSocket() {
     connect()
 
     return () => {
+      isMounted = false;
       if (timeoutId) clearTimeout(timeoutId)
       if (wsRef.current) wsRef.current.close()
     }

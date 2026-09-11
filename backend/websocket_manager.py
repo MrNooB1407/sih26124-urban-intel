@@ -17,16 +17,24 @@ class ConnectionManager:
             self.active_connections.remove(websocket)
     
     async def broadcast(self, event_type: str, data: Dict[str, Any]):
-        """Send a JSON message to all connected clients."""
+        """Send a JSON message to all connected clients concurrently."""
         message = json.dumps({"event": event_type, "data": data}, default=str)
-        disconnected = []
-        for connection in self.active_connections:
+        import asyncio
+        
+        async def _send(connection):
             try:
-                await connection.send_text(message)
+                # Add timeout to prevent hanging connections from blocking
+                async with asyncio.timeout(1.0):
+                    await connection.send_text(message)
             except Exception:
-                disconnected.append(connection)
-        for conn in disconnected:
-            self.disconnect(conn)
+                self.disconnect(connection)
+                
+        # Fire and forget all sends concurrently
+        tasks = [_send(conn) for conn in self.active_connections]
+        if tasks:
+            async def _run_tasks():
+                await asyncio.gather(*tasks, return_exceptions=True)
+            asyncio.create_task(_run_tasks())
 
 # Singleton instance
 manager = ConnectionManager()

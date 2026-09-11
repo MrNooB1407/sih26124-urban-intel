@@ -16,6 +16,12 @@ FRAME_SKIP = 5
 # ~1 accident per 500 processed frames
 ACCIDENT_PROBABILITY = 0.002
 
+# Speed limit for overspeeding detection (km/h)
+SPEED_LIMIT = 40.0
+
+# Probability of triggering a lane violation event per processed frame
+LANE_VIOLATION_PROBABILITY = 0.005
+
 # Backend API URL
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 

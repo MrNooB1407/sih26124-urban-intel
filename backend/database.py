@@ -13,7 +13,21 @@ os.makedirs(DB_DIR, exist_ok=True)
 DB_PATH = os.path.join(DB_DIR, "urban_intel.db")
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+from sqlalchemy import event
+
+engine = create_engine(
+    DATABASE_URL, 
+    connect_args={"check_same_thread": False, "timeout": 15.0}
+)
+
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA cache_size=-64000")
+    cursor.close()
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 class Base(DeclarativeBase):
@@ -25,6 +39,8 @@ class IncidentType(str, enum.Enum):
     ROAD_DAMAGE = "road_damage"
     ACCIDENT = "accident"
     CONGESTION = "congestion"
+    OVERSPEEDING = "overspeeding"
+    LANE_VIOLATION = "lane_violation"
 
 class Severity(str, enum.Enum):
     LOW = "low"
@@ -51,6 +67,12 @@ class Incident(Base):
     severity = Column(SQLEnum(Severity), default=Severity.MEDIUM)
     plate_number = Column(String, nullable=True)
     contact_number = Column(String, nullable=True)
+    
+    # Overspeeding / Lane Violation fields
+    current_speed = Column(Float, nullable=True)
+    speed_limit = Column(Float, nullable=True)
+    current_lane = Column(String, nullable=True)
+    expected_lane = Column(String, nullable=True)
 
 class BusPosition(Base):
     __tablename__ = "bus_positions"

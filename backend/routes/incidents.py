@@ -9,29 +9,41 @@ from backend.websocket_manager import manager
 router = APIRouter(prefix="/api/incidents", tags=["incidents"])
 
 
+from fastapi.concurrency import run_in_threadpool
+
 @router.post("/", response_model=IncidentFull)
 async def create_incident(incident_in: IncidentCreate, db: Session = Depends(get_db)):
     """Ingest a new incident from Deck-AI. Broadcasts via WebSocket."""
-    db_incident = Incident(**incident_in.model_dump())
-    db.add(db_incident)
-    db.commit()
-    db.refresh(db_incident)
+    
+    def db_op():
+        db_incident = Incident(**incident_in.model_dump())
+        db.add(db_incident)
+        db.commit()
+        db.refresh(db_incident)
+        return db_incident
+        
+    db_incident = await run_in_threadpool(db_op)
 
     # Broadcast new incident to all connected dashboard clients
     incident_data = IncidentFull.model_validate(db_incident).model_dump(mode="json")
     await manager.broadcast("new_incident", incident_data)
 
-    # If accident, also fire accident_alert
-    if db_incident.type == IncidentType.ACCIDENT:
+    # Fire specific alerts based on severity and type
+    if db_incident.type == IncidentType.ACCIDENT or db_incident.severity in [Severity.CRITICAL, Severity.HIGH]:
         alert_data = {
             "incident_id": db_incident.id,
+            "type": db_incident.type.value,
+            "severity": db_incident.severity.value,
             "plate_number": db_incident.plate_number,
             "contact_number": db_incident.contact_number,
+            "bus_id": db_incident.bus_id,
+            "current_speed": db_incident.current_speed,
+            "speed_limit": db_incident.speed_limit,
             "lat": db_incident.lat,
             "lng": db_incident.lng,
             "timestamp": db_incident.timestamp.isoformat() if db_incident.timestamp else None,
         }
-        await manager.broadcast("accident_alert", alert_data)
+        await manager.broadcast("accident_alert", alert_data) # Keep using the same WS event name for frontend compatibility
 
     return db_incident
 

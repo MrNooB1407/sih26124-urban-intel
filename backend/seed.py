@@ -6,6 +6,7 @@ import os
 import struct
 import zlib
 import json
+import sys
 
 from backend.database import get_db, Incident, BusPosition, TrafficZone, IncidentType, Severity, DensityLevel
 
@@ -13,6 +14,10 @@ router = APIRouter(prefix="/api", tags=["seed"])
 
 # Project root directory
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from simulator.routes_data import ROUTES
 
 
 def create_png(filepath, r, g, b, size=100):
@@ -57,23 +62,21 @@ async def seed_data(db: Session = Depends(get_db)):
     db.query(TrafficZone).delete()
     db.commit()
 
-    # Hyderabad route: Secunderabad -> HITEC City
-    waypoints = [
-        (17.4334, 78.5016), (17.4428, 78.4872), (17.4442, 78.4776), (17.4455, 78.4682),
-        (17.4412, 78.4556), (17.4265, 78.4528), (17.4248, 78.4485), (17.4194, 78.4452),
-        (17.4230, 78.4320), (17.4290, 78.4110), (17.4338, 78.4005), (17.4395, 78.3905),
-        (17.4504, 78.3808), (17.4415, 78.3802), (17.4312, 78.3705), (17.4372, 78.3444)
-    ]
+    # Fetch routes dynamically from simulator
+    route_names = list(ROUTES.keys())
+    waypoints = ROUTES[route_names[0]]["waypoints"]
 
     snapshots_dir = os.path.join(PROJECT_ROOT, "data", "snapshots")
     os.makedirs(snapshots_dir, exist_ok=True)
 
     # Define incident distribution
     incident_types = (
-        [IncidentType.POTHOLE] * 10 +
+        [IncidentType.POTHOLE] * 7 +
         [IncidentType.ROAD_DAMAGE] * 4 +
         [IncidentType.CONGESTION] * 3 +
-        [IncidentType.ACCIDENT] * 3
+        [IncidentType.ACCIDENT] * 2 +
+        [IncidentType.OVERSPEEDING] * 2 +
+        [IncidentType.LANE_VIOLATION] * 2
     )
     random.shuffle(incident_types)
 
@@ -91,6 +94,8 @@ async def seed_data(db: Session = Depends(get_db)):
         IncidentType.POTHOLE: (255, 165, 0),
         IncidentType.ROAD_DAMAGE: (255, 220, 50),
         IncidentType.CONGESTION: (50, 100, 255),
+        IncidentType.OVERSPEEDING: (255, 0, 255),
+        IncidentType.LANE_VIOLATION: (128, 0, 128),
     }
 
     # Load mock plates for accident incidents
@@ -123,6 +128,20 @@ async def seed_data(db: Session = Depends(get_db)):
             bus_id=random.choice(bus_ids),
         )
 
+        if itype == IncidentType.OVERSPEEDING:
+            inc.speed_limit = 40.0
+            excess = random.choice([5.0, 12.0, 25.0]) # low, med, high excess
+            inc.current_speed = inc.speed_limit + excess
+            if excess > 20: inc.severity = Severity.CRITICAL
+            elif excess > 10: inc.severity = Severity.HIGH
+            else: inc.severity = Severity.MEDIUM
+        
+        if itype == IncidentType.LANE_VIOLATION:
+            lanes = ["Lane 1", "Lane 2", "Lane 3", "Bus Lane"]
+            inc.expected_lane = "Bus Lane"
+            inc.current_lane = random.choice(["Lane 1", "Lane 2", "Lane 3"])
+            inc.severity = Severity.HIGH
+
         # For accidents, attach plate and contact from mock registry
         if itype == IncidentType.ACCIDENT:
             try:
@@ -150,13 +169,16 @@ async def seed_data(db: Session = Depends(get_db)):
     # --- Seed Bus Positions ---
     buses_created = 0
     for idx, bus_id in enumerate(bus_ids):
-        wp = waypoints[idx * 5 % len(waypoints)]
+        route_name = route_names[idx % len(route_names)]
+        route_waypoints = ROUTES[route_name]["waypoints"]
+        wp = route_waypoints[idx * 5 % len(route_waypoints)]
+        
         bus = BusPosition(
             bus_id=bus_id,
             lat=wp[0],
             lng=wp[1],
             speed=round(random.uniform(15.0, 40.0), 1),
-            route_name="Secunderabad-HITEC",
+            route_name=route_name,
             timestamp=now,
         )
         db.add(bus)
@@ -170,7 +192,7 @@ async def seed_data(db: Session = Depends(get_db)):
     zones_created = 0
     for i in range(8):
         zone = TrafficZone(
-            route_name="Secunderabad-HITEC",
+            route_name=route_names[i % len(route_names)],
             segment_index=i,
             density_level=density_choices[i],
             vehicle_count=random.randint(1, 15),

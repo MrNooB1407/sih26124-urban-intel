@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Polyline, CircleMarker, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
+import IncidentDetail from './IncidentDetail'
 
 const ROUTE_WAYPOINTS = [
   [17.4334, 78.5016], [17.4428, 78.4872], [17.4442, 78.4776], [17.4455, 78.4682],
@@ -11,11 +12,21 @@ const ROUTE_WAYPOINTS = [
 
 function MapUpdater({ center }) {
   const map = useMap()
+  
   useEffect(() => {
     if (center) {
       map.flyTo(center, 15, { duration: 1.5 })
     }
   }, [center, map])
+
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize()
+    })
+    observer.observe(map.getContainer())
+    return () => observer.disconnect()
+  }, [map])
+
   return null
 }
 
@@ -23,7 +34,9 @@ const typeColors = {
   pothole: '#ff8c00',
   road_damage: '#ffd700',
   accident: '#ff3333',
-  congestion: '#4488ff'
+  congestion: '#4488ff',
+  overspeeding: '#ff00ff',
+  lane_violation: '#800080'
 }
 
 const severityRadius = {
@@ -48,79 +61,143 @@ const createBusIcon = (busId) => {
   })
 }
 
-export default function MapView({ incidents, busPositions, trafficZones, onIncidentClick, center }) {
+function MapLegend() {
   return (
-    <MapContainer 
-      center={[17.44, 78.45]} 
-      zoom={13} 
-      style={{ height: '100%', width: '100%' }}
+    <div className="map-legend">
+      <h4>LEGEND</h4>
+      <div className="legend-section">
+        <strong>Vehicles</strong>
+        <div className="legend-item"><span style={{background: 'rgba(0,0,0,0.5)', display: 'inline-block', width: 12, height: 12, borderRadius: '50%'}}></span> Bus Position</div>
+      </div>
+      <div className="legend-section">
+        <strong>Incident Severity</strong>
+        <div className="legend-item"><span className="legend-color critical"></span> Critical</div>
+        <div className="legend-item"><span className="legend-color high"></span> High</div>
+        <div className="legend-item"><span className="legend-color medium"></span> Medium</div>
+        <div className="legend-item"><span className="legend-color low"></span> Low/Normal</div>
+      </div>
+      <div className="legend-section">
+        <strong>Traffic Conditions</strong>
+        <div className="legend-item"><span className="legend-line" style={{background: trafficColors.high}}></span> High Density</div>
+        <div className="legend-item"><span className="legend-line" style={{background: trafficColors.moderate}}></span> Moderate</div>
+        <div className="legend-item"><span className="legend-line" style={{background: trafficColors.normal}}></span> Normal</div>
+      </div>
+    </div>
+  )
+}
+
+function IncidentMarker({ inc, isSelected, onIncidentClick }) {
+  const markerRef = useRef(null)
+
+  useEffect(() => {
+    if (isSelected && markerRef.current) {
+      markerRef.current.openPopup()
+    }
+  }, [isSelected])
+
+  return (
+    <CircleMarker
+      ref={markerRef}
+      center={[inc.lat, inc.lng]}
+      radius={(severityRadius[inc.severity] || 5) + (isSelected ? 6 : 0)}
+      pathOptions={{
+        color: isSelected ? '#ffffff' : (typeColors[inc.type] || '#fff'),
+        fillColor: typeColors[inc.type] || '#fff',
+        fillOpacity: isSelected ? 1 : 0.8,
+        weight: isSelected ? 4 : 2
+      }}
+      eventHandlers={{
+        click: () => onIncidentClick(inc)
+      }}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      
-      <MapUpdater center={center} />
+      <Popup 
+        offset={[0, -10]} 
+        autoPan={true} 
+        autoPanPadding={[50, 50]}
+        className="incident-leaflet-popup"
+        closeButton={false}
+        maxHeight={280}
+      >
+        <IncidentDetail incident={inc} onClose={() => onIncidentClick(null)} />
+      </Popup>
+    </CircleMarker>
+  )
+}
 
-      {/* Base Route */}
-      <Polyline 
-        positions={ROUTE_WAYPOINTS} 
-        pathOptions={{ color: 'blue', weight: 3, opacity: 0.6, dashArray: '5, 10' }} 
-      />
-
-      {/* Traffic Overlay */}
-      {ROUTE_WAYPOINTS.slice(0, -1).map((pt1, i) => {
-        const pt2 = ROUTE_WAYPOINTS[i + 1]
-        // Check if there is a traffic zone for this segment
-        const zone = trafficZones.find(z => z.segment_index === i)
-        if (zone) {
-          return (
-            <Polyline
-              key={`traffic-${i}`}
-              positions={[pt1, pt2]}
-              pathOptions={{ 
-                color: trafficColors[zone.density_level] || trafficColors.normal, 
-                weight: 6, 
-                opacity: 0.8 
-              }}
-            />
-          )
-        }
-        return null
-      })}
-
-      {/* Incidents */}
-      {incidents.map(inc => (
-        <CircleMarker
-          key={inc.id}
-          center={[inc.lat, inc.lng]}
-          radius={severityRadius[inc.severity] || 5}
-          pathOptions={{
-            color: typeColors[inc.type] || '#fff',
-            fillColor: typeColors[inc.type] || '#fff',
-            fillOpacity: 0.8,
-            weight: 2
-          }}
-          eventHandlers={{
-            click: () => onIncidentClick(inc)
-          }}
+export default function MapView({ incidents, busPositions, trafficZones, onIncidentClick, center, selectedId, isAuthority }) {
+  return (
+    <div style={{ height: '100%', width: '100%', position: 'relative' }}>
+      <MapContainer 
+        center={[17.44, 78.45]} 
+        zoom={13} 
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-      ))}
+        
+        <MapUpdater center={center} />
 
-      {/* Buses */}
-      {Object.values(busPositions).map(bus => (
-        <Marker 
-          key={bus.bus_id} 
-          position={[bus.lat, bus.lng]}
-          icon={createBusIcon(bus.bus_id)}
-        >
-          <Popup>
-            Bus ID: {bus.bus_id}<br/>
-            Speed: {bus.speed.toFixed(1)} km/h
-          </Popup>
-        </Marker>
-      ))}
+        {/* Base Route */}
+        <Polyline 
+          positions={ROUTE_WAYPOINTS} 
+          pathOptions={{ color: 'blue', weight: 3, opacity: 0.6, dashArray: '5, 10' }} 
+        />
 
-    </MapContainer>
+        {/* Traffic Overlay */}
+        {ROUTE_WAYPOINTS.slice(0, -1).map((pt1, i) => {
+          const pt2 = ROUTE_WAYPOINTS[i + 1]
+          // Check if there is a traffic zone for this segment
+          const zone = trafficZones.find(z => z.segment_index === i)
+          if (zone) {
+            return (
+              <Polyline
+                key={`traffic-${i}`}
+                positions={[pt1, pt2]}
+                pathOptions={{ 
+                  color: trafficColors[zone.density_level] || trafficColors.normal, 
+                  weight: 6, 
+                  opacity: 0.8 
+                }}
+              />
+            )
+          }
+          return null
+        })}
+
+        {/* Incidents */}
+        {incidents.map(inc => (
+          <IncidentMarker
+            key={inc.id}
+            inc={inc}
+            isSelected={inc.id === selectedId}
+            onIncidentClick={onIncidentClick}
+          />
+        ))}
+
+        {/* Buses */}
+        {isAuthority && Object.values(busPositions).map(bus => (
+          <Marker 
+            key={bus.bus_id} 
+            position={[bus.lat, bus.lng]}
+            icon={createBusIcon(bus.bus_id)}
+          >
+            <Popup>
+              <strong>{bus.bus_id}</strong><br/>
+              Speed: {bus.speed?.toFixed(1) || 0} km/h<br/>
+              Route: {bus.route_name || 'N/A'}
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* Bus routes - currently hardcoded route for demo */}
+        {isAuthority && (
+          <Polyline positions={ROUTE_WAYPOINTS} color="#00ffcc" weight={3} opacity={0.5} />
+        )}
+
+      </MapContainer>
+      <MapLegend />
+    </div>
   )
 }

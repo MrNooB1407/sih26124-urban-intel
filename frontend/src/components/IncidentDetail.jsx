@@ -35,7 +35,11 @@ export default function IncidentDetail({ incident, onClose }) {
         )}
         
         <div className="detail-row">
-          <strong>Accuracy:</strong> {incident.accuracy?.toFixed(1)}%
+          <strong>Detection Confidence:</strong> {incident.accuracy?.toFixed(1)}%
+        </div>
+
+        <div className="detail-row">
+          <strong>Status:</strong> <span style={{color: '#00ffcc', fontWeight: 'bold'}}>ACTIVE</span>
         </div>
 
         {role === 'authority' && incident.type === 'accident' && (
@@ -45,6 +49,31 @@ export default function IncidentDetail({ incident, onClose }) {
             </div>
             <div className="detail-row">
               <strong>Contact:</strong> {incident.contact_number || 'N/A'}
+            </div>
+          </>
+        )}
+
+        {incident.type === 'overspeeding' && (
+          <>
+            <div className="detail-row">
+              <strong>Speed:</strong> <span className="text-critical">{incident.current_speed?.toFixed(1)} km/h</span>
+            </div>
+            <div className="detail-row">
+              <strong>Speed Limit:</strong> {incident.speed_limit?.toFixed(1)} km/h
+            </div>
+            <div className="detail-row">
+              <strong>Excess:</strong> +{(incident.current_speed - incident.speed_limit)?.toFixed(1)} km/h
+            </div>
+          </>
+        )}
+
+        {incident.type === 'lane_violation' && (
+          <>
+            <div className="detail-row">
+              <strong>Current Lane:</strong> <span className="text-critical">{incident.current_lane}</span>
+            </div>
+            <div className="detail-row">
+              <strong>Expected Lane:</strong> {incident.expected_lane}
             </div>
           </>
         )}
