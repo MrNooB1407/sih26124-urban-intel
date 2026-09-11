@@ -1,0 +1,22 @@
+[
+  {"plate": "TS 09 AB 3456", "owner": "Rajesh Kumar", "contact": "+91-9876543210"},
+  {"plate": "TS 07 CD 7890", "owner": "Priya Sharma", "contact": "+91-9123456780"},
+  {"plate": "TS 11 EF 1234", "owner": "Anand Reddy", "contact": "+91-9988776655"},
+  {"plate": "TS 05 GH 5678", "owner": "Sunita Devi", "contact": "+91-8877665544"},
+  {"plate": "TS 13 IJ 9012", "owner": "Vikram Singh", "contact": "+91-7766554433"},
+  {"plate": "TS 02 KL 3457", "owner": "Meena Patel", "contact": "+91-6655443322"},
+  {"plate": "TS 08 MN 6789", "owner": "Suresh Rao", "contact": "+91-5544332211"},
+  {"plate": "TS 14 OP 0123", "owner": "Kavita Iyer", "contact": "+91-9871234560"},
+  {"plate": "TS 10 QR 4567", "owner": "Ramesh Gupta", "contact": "+91-9862345670"},
+  {"plate": "TS 03 ST 8901", "owner": "Lakshmi Naidu", "contact": "+91-9753456780"},
+  {"plate": "TS 06 UV 2345", "owner": "Deepak Joshi", "contact": "+91-9644567890"},
+  {"plate": "TS 12 WX 6780", "owner": "Anjali Menon", "contact": "+91-9535678901"},
+  {"plate": "TS 01 YZ 1123", "owner": "Manoj Tiwari", "contact": "+91-9426789012"},
+  {"plate": "TS 04 AB 5567", "owner": "Pooja Desai", "contact": "+91-9317890123"},
+  {"plate": "TS 15 CD 9901", "owner": "Arjun Nair", "contact": "+91-9208901234"},
+  {"plate": "AP 28 EF 3344", "owner": "Srinivas Murthy", "contact": "+91-9109012345"},
+  {"plate": "AP 31 GH 7788", "owner": "Radha Krishna", "contact": "+91-8890123456"},
+  {"plate": "KA 05 IJ 1122", "owner": "Naveen Hegde", "contact": "+91-8781234567"},
+  {"plate": "KA 01 KL 5566", "owner": "Divya Bhat", "contact": "+91-8672345678"},
+  {"plate": "MH 12 MN 9900", "owner": "Rahul Patil", "contact": "+91-8563456789"}
+]
