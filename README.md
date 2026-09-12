@@ -1,227 +1,276 @@
-# 🚌 AI-Powered Mobile Urban Intelligence Platform
+﻿# 🚌 Urban Intel
+AI-Powered Mobile Urban Intelligence Platform
 
-> **SIH 2026 — Problem Statement SIH26124**  
-> *Sponsor: Bharat Electronics Limited*
+**SIH 2026 — Problem Statement SIH26124**  
+*Sponsor: Bharat Electronics Limited*
 
-A software-only prototype that simulates an AI-powered system where cameras mounted on city buses detect road/traffic problems in real time — potholes, damaged road infrastructure, accidents/hit-and-run, and traffic congestion. Each detection is geotagged via GPS and pushed to a central dashboard for city authorities and citizens.
+## 1. Overview
+Cameras mounted on public transit buses can serve as continuous, mobile sensing units traversing city infrastructure. Urban Intel leverages this concept by processing visual and video data at the edge to detect road hazards, accidents, and traffic conditions. Detected incidents are immediately geotagged, filtered, and dispatched to a central backend. A real-time, interactive dashboard empowers both city authorities and citizens with actionable, role-based insights.
 
----
+## 2. Problem Statement
+Urban infrastructure maintenance and road safety monitoring typically rely on manual reporting or stationary CCTV cameras, which provide limited coverage and slow response times. Potholes go unaddressed, hit-and-run accidents lack immediate actionable intelligence, and traffic congestion data is often delayed. There is a need for a dynamic, city-wide monitoring system capable of proactively detecting and reporting these issues.
 
-## Architecture
+## 3. Proposed Solution
+Urban Intel transforms standard city buses into an intelligent IoT fleet. A lightweight AI edge pipeline (Deck-AI) processes dashboard camera feeds to identify road damage, estimate vehicle density, and capture driver violations like overspeeding or erratic lane changes. The central cloud architecture receives these anomalies in real-time, persists them to a database, and broadcasts them via WebSockets to a responsive React-Leaflet GIS dashboard, facilitating instant emergency response and long-term infrastructural analytics.
 
-```mermaid
-graph LR
-    subgraph "Edge (Simulated)"
-        A[Bus Simulator] -->|frames + GPS| B[Deck-AI]
-        B -->|pothole/road_damage| C[Detection Filter]
-        B -->|vehicle count| D[Traffic Estimator]
-        B -->|accident| E[Plate Recognizer]
+## 4. Key Features
+
+### Road & Infrastructure Monitoring
+- **Potholes:** Edge detection algorithms identify and geotag severe road degradation.
+- **Road damage:** Cracks, missing manholes, and degraded infrastructure are logged for maintenance planning.
+
+### Traffic & Driver Monitoring
+- **Traffic density/congestion:** Segment-based vehicle counting determines Normal, Moderate, or High traffic zones.
+- **Overspeeding:** Telemetry tracking automatically flags transit vehicles exceeding segment speed limits.
+- **Lane violations:** Erratic or illegal lane changes are visually identified and reported.
+
+### Emergency & Incident Detection
+- **Accident detection:** Immediate flagging of collisions on the route.
+- **Hit-and-run workflow:** Integrated mock OCR scans license plates of involved vehicles, pulling owner contact information from a mocked registry.
+- **Emergency alerts:** High-priority visual alert banners prompt immediate operator action.
+
+### Real-Time Monitoring
+- **Live incident feed:** A scrolling, filterable feed synced seamlessly with the map view.
+- **WebSocket updates:** Sub-second latency for new incidents and vehicle telemetry.
+- **Live bus positions:** Authority users can track the exact coordinates and speed of the transit fleet.
+- **Traffic zone updates:** Dynamic routing segments shift colors based on live congestion algorithms.
+
+### GIS Visualization
+- **Interactive map:** A responsive 4:3 fixed-aspect-ratio Leaflet implementation embedded in a command-center interface.
+- **Incident markers:** Color-coded circular markers sized dynamically by severity.
+- **Route visualization:** Live rendering of predefined Hyderabad transit corridors.
+- **Traffic-density visualization:** Map segments overlay real-time color-coded congestion data.
+- **Incident selection to map navigation:** Clicking an incident in the feed smoothly pans (flyTo) the map and natively opens an unclippable, scrolling detail popup.
+
+### Role-Based Dashboard
+- **Citizen:** Restricted view focusing on public safety. Citizens can see potholes, generalized accidents, and traffic zones to optimize their commute.
+- **Authority:** Full operational view. Authorities have exclusive access to bus telemetry, live vehicle IDs, driver violations (overspeeding/lane shifts), and sensitive OCR-extracted emergency contact details.
+
+### Analytics
+- **Incident overview:** High-level counts of active anomalies.
+- **Severity distribution:** Breakdown of Low, Medium, High, and Critical alerts.
+- **Incident trends:** Categorical charting using Recharts to visualize anomaly distributions.
+- **Infrastructure vs driver violations:** Separate KPI tracking for road defects versus fleet operator behavior.
+- **Traffic zone intelligence:** Intelligent aggregation showing monitored zones and actively congested segments.
+- **Vehicle counts:** Live tracking of the active transit fleet.
+
+### Vehicle Monitoring
+- **Live bus speed:** Real-time kilometers per hour (km/h).
+- **Route:** The assigned transit corridor.
+- **GPS position:** Exact latitude and longitude.
+- **Violations:** Cumulative count of detected lane and speed infractions for driver accountability.
+- **Speed-limit information when available:** Dynamic limits calculated against current telemetry.
+- **Incident association:** Intelligent timeline tracking merging recent incidents with the specific bus that reported them.
+- **Last-update information:** Live pulse indicators and robust timestamp validation to ensure telemetry freshness.
+
+## 5. System Architecture
+
+\\\mermaid
+graph TD
+    subgraph Edge_Bus_Simulator
+        A[Bus Simulator] -->|Frames & GPS| B[Deck-AI Pipeline]
+        B -->|Hazards| C[Pothole / Damage Model]
+        B -->|Counts| D[Traffic Estimator]
+        B -->|Collisions| E[Plate Recognizer & Registry]
+        B -->|Telemetry| F[Driver Violation Engine]
     end
     
-    subgraph "Central Server"
-        F[FastAPI Backend]
-        G[(SQLite DB)]
-        H[WebSocket Hub]
+    subgraph Cloud_Backend_FastAPI
+        G[REST API]
+        H[(SQLite)]
+        I[WebSocket Hub]
     end
     
-    subgraph "Dashboard"
-        I[React + Leaflet]
+    subgraph Web_Client_React
+        J[Auth Context]
+        K[GIS MapView]
+        L[Analytics & Vehicles]
     end
     
-    C -->|POST /api/incidents| F
-    D -->|POST /api/traffic/zones| F
-    E -->|POST /api/incidents| F
-    A -->|POST /api/buses/position| F
-    F --> G
-    F --> H
-    H -->|WS push| I
-    I -->|REST queries| F
-```
+    C -->|POST /incidents| G
+    D -->|POST /traffic/zones| G
+    E -->|POST /incidents| G
+    F -->|POST /incidents| G
+    A -->|POST /buses/position| G
+    
+    G --> H
+    G --> I
+    I -->|Live Broadcast| J
+    J --> K
+    J --> L
+    K -->|Syncs Selection| L
+\\\
 
-## Components
+## 6. Real-Time Data Flow
+1. **Simulation:** The Python simulator drives virtual buses along actual Hyderabad coordinates, emitting mock frames and telemetry.
+2. **Edge Processing:** The Deck-AI module ingests frames, assessing them for hazards, vehicles, and accidents based on configurable probabilistic thresholds.
+3. **Ingestion:** Validated incidents and telemetry are posted to the FastAPI backend via REST endpoints.
+4. **Persistence:** The backend sanitizes the payloads, applies server-side timestamps, and stores the records in SQLite.
+5. **Broadcasting:** The WebSocket Manager catches the database commits and instantly broadcasts JSON payloads to all connected clients.
+6. **Dashboard Hydration:** The React frontend receives the WebSocket events, intelligently merging them into state without mutating existing arrays.
+7. **Interactive UX:** The UI re-renders instantly: updating KPI charts, shifting traffic segment colors, moving bus icons, and spawning incident markers on the interactive Leaflet map.
 
-| Component | Tech Stack | Description |
-|-----------|-----------|-------------|
-| **Backend** | FastAPI + SQLite | REST + WebSocket API, role-based access |
-| **Frontend** | React + Leaflet + OpenStreetMap | Live map, incident feed, citizen/authority views |
-| **Simulator** | Python + OpenCV | Simulates 1-3 buses on real Hyderabad routes |
-| **Deck-AI** | Python (+ optional YOLOv8) | Pothole detection, traffic estimation, plate recognition |
+## 7. Citizen vs Authority
+Urban Intel enforces strict role-based data presentation.
+- **Citizen:** Access is limited to public awareness. Citizens can view road hazards, general accident locations, and overall traffic density to plan safe travel. The UI inherently suppresses sensitive fleet markers, bus IDs, plate numbers, and driver infractions.
+- **Authority:** Unrestricted access intended for municipal administrators or transit managers. Includes total fleet visibility, live vehicle tracking, specific driver accountability metrics (lane/speed violations), and actionable emergency data like OCR-scraped license plates and driver contact numbers.
 
----
+*(Note: Authentication is currently implemented via a mocked token toggle for demonstration purposes.)*
 
-## Quick Start
+## 8. Analytics & Intelligence
+The Analytics page provides a comprehensive operational overview without relying on hardcoded dummy graphs. Built using Recharts, the graphs and KPIs are entirely derived from the real-time application state: aggregating the live incident array and traffic zone density dictionaries into interactive visual distributions.
+
+## 9. Hyderabad Simulation Routes
+The Python simulator actively drives coordinates across three distinct Hyderabad corridors:
+- **Secunderabad -> HITEC City**
+- **Mehdipatnam -> JNTU**
+- **Secunderabad -> Charminar**
+
+## 10. Technology Stack
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Backend API** | FastAPI | High-performance async REST endpoints and business logic |
+| **Database** | SQLite + SQLAlchemy | Relational persistence of telemetry, zones, and incidents |
+| **Real-time** | WebSockets | Push-based updates from server to client |
+| **Frontend** | React + Vite | Fast, component-based user interface |
+| **Mapping** | Leaflet + React-Leaflet | Hardware-accelerated GIS visualizations |
+| **Charts** | Recharts | Dynamic SVG-based analytics rendering |
+| **Edge Mock** | Python + OpenCV | Simulates physical camera capture and edge inference |
+
+## 11. Quick Start
 
 ### Prerequisites
-- **Python 3.10+** (tested on 3.14)
-- **Node.js 18+** (tested on 24.19)
+- Python 3.10+
+- Node.js 18+
 
-### Option 1: One-command launch
+### Setup
 
-```bash
-# 1. Clone / navigate to the project
+\\\ash
+# 1. Clone the repository
 cd SIH260124
 
-# 2. Create virtual environment & install Python deps
+# 2. Setup Python Virtual Environment (Windows)
 python -m venv .venv
-.venv\Scripts\activate         # Windows
-# source .venv/bin/activate    # Linux/Mac
+.venv\Scripts\activate
 
+# 3. Install Backend Dependencies
 pip install -r requirements.txt
 
-# 3. Install frontend deps
-cd frontend && npm install && cd ..
+# 4. Install Frontend Dependencies
+cd frontend
+npm install
+cd ..
 
-# 4. Start everything
+# 5. Launch Full Stack
 python start_all.py --buses 3 --speed 10
-```
+\\\
 
-This starts:
-- **Backend** on http://localhost:8000 (API docs at `/docs`)
-- **Frontend** on http://localhost:3000
-- **Simulator** with 3 buses at 10× speed
+This master script concurrently boots the FastAPI backend (:8000), the Vite frontend (:3000), seeds the SQLite database, and engages the Python simulator.
 
-### Option 2: Start components individually
+## 12. API Endpoints
 
-```bash
-# Terminal 1 — Backend
-.venv\Scripts\python -m uvicorn backend.main:app --port 8000
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | /api/seed | Drops tables and seeds environment with foundational demo data. |
+| POST | /api/auth/login | Returns a mocked JWT-style token based on requested role. |
+| GET | /api/incidents | Fetches active incidents (filtered automatically if role=citizen). |
+| POST | /api/incidents/ | Ingests new anomaly payloads from the edge pipeline. |
+| GET | /api/buses | Fetches latest telemetry for the active transit fleet. |
+| POST | /api/buses/position | Updates backend with live edge GPS telemetry. |
+| GET | /api/traffic/zones | Fetches active density states for route segments. |
+| POST | /api/traffic/zones | Updates segment density from traffic estimation modules. |
+| WS | /ws | Establishes the real-time bidirectional JSON data stream. |
 
-# Terminal 2 — Frontend
-cd frontend && npx vite --port 3000
+## 13. Configuration
+The edge simulator behavior can be tuned in deck-ai/config.py:
+- CONFIDENCE_THRESHOLD: Minimum confidence score required to post an incident to the backend.
+- SPEED_LIMIT: Baseline speed limit used to calculate telemetry violations.
+- ACCIDENT_PROBABILITY / POTHOLE_PROBABILITY: Probabilistic tuning for how often the mock pipeline generates specific anomalies per frame.
 
-# Terminal 3 — Seed data + Run simulator
-curl -X POST http://localhost:8000/api/seed
-.venv\Scripts\python -m simulator.bus_simulator --buses 3 --speed 10
-```
+## 14. Project Structure
 
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/seed` | Seed 20 mock incidents + bus positions + traffic zones |
-| `GET` | `/api/incidents?role=citizen` | List incidents (citizen view, no bus_id) |
-| `GET` | `/api/incidents?role=authority` | List incidents (authority view, full details) |
-| `POST` | `/api/incidents/` | Ingest new incident from Deck-AI |
-| `GET` | `/api/buses` | Get current bus positions |
-| `POST` | `/api/buses/position` | Update bus GPS position |
-| `GET` | `/api/traffic/zones` | Get traffic zone density data |
-| `POST` | `/api/traffic/zones` | Update traffic zone density |
-| `POST` | `/api/auth/login` | Mock login (citizen/authority) |
-| `WS` | `/ws` | WebSocket for live updates |
-| `GET` | `/api/health` | Health check |
-
----
-
-## Features
-
-### Dashboard
-- **Live map** with bus route polyline, moving bus markers, and incident markers
-- **Incident markers** color-coded by type (🟠 pothole, 🟡 road damage, 🔴 accident, 🔵 congestion) and sized by severity
-- **Traffic overlay** — route segments colored green/yellow/red for normal/moderate/high density
-- **Incident feed** — scrollable, filterable list synced with the map
-- **Detail panel** — click any incident for: location, time, bus ID (authority only), accuracy %, snapshot image
-- **Citizen / Authority toggle** — authority sees bus IDs, plate numbers, emergency contacts
-
-### Accident / Hit-and-Run Flow
-When an accident is detected:
-1. Plate recognition (mocked OCR) identifies the vehicle
-2. Lookup in mock vehicle registry returns owner + contact
-3. 🚨 **Emergency alert banner** appears on dashboard with plate number and contact
-4. Alert auto-dismisses after 15 seconds
-
-### Confidence Threshold
-Only detections above the configurable threshold (default: 60%) are forwarded to the backend — preventing minor/uncertain detections from flooding the dashboard.
-
----
-
-## Configuration
-
-Edit `deck-ai/config.py`:
-
-```python
-CONFIDENCE_THRESHOLD = 60.0    # Min confidence % to forward detections
-FRAME_SKIP = 5                 # Process every Nth frame
-ACCIDENT_PROBABILITY = 0.002   # ~1 accident per 500 processed frames
-```
-
----
-
-## Project Structure
-
-```
+\\\	ext
 SIH260124/
-├── start_all.py                 # One-command launcher
+├── start_all.py                 # Multi-process orchestration script
 ├── requirements.txt             # Python dependencies
-├── backend/                     # FastAPI central server
-│   ├── main.py                  # App entry point
-│   ├── database.py              # SQLAlchemy models + SQLite
-│   ├── schemas.py               # Pydantic request/response models
-│   ├── websocket_manager.py     # WebSocket broadcast hub
-│   ├── seed.py                  # Mock data seeder
-│   └── routes/
-│       ├── auth.py              # Mock login
-│       ├── incidents.py         # Incident CRUD + ingest
-│       ├── buses.py             # Bus position endpoints
-│       └── traffic.py           # Traffic zone endpoints
-├── frontend/                    # React dashboard
-│   ├── src/
-│   │   ├── App.jsx              # Main layout
-│   │   ├── components/
-│   │   │   ├── MapView.jsx      # Leaflet map
-│   │   │   ├── IncidentFeed.jsx # Scrollable incident list
-│   │   │   ├── IncidentDetail.jsx # Detail panel
-│   │   │   ├── AlertBanner.jsx  # Emergency alert
-│   │   │   └── LoginToggle.jsx  # Role switcher
-│   │   ├── hooks/useWebSocket.js
-│   │   ├── context/AuthContext.jsx
-│   │   └── utils/api.js
-│   └── package.json
-├── simulator/                   # Bus simulation
-│   ├── bus_simulator.py         # Main simulator loop
-│   ├── routes_data.py           # Hyderabad route waypoints
-│   ├── video_player.py          # OpenCV video reader
-│   └── sample_videos/
-│       ├── generate_sample.py   # Synthetic video generator
-│       └── sample_road.mp4      # Generated sample video
-├── deck-ai/                     # Edge AI detection
-│   ├── detector.py              # Detection orchestrator
-│   ├── pothole_model.py         # Swappable detection model
-│   ├── traffic_estimator.py     # Vehicle counting
-│   ├── plate_recognizer.py      # Mocked OCR + registry lookup
-│   └── config.py                # Thresholds and settings
-└── data/
-    ├── mock_plates.json         # Fake vehicle registry (20 entries)
-    ├── urban_intel.db           # SQLite database
-    └── snapshots/               # Detection crop images
-```
+├── backend/                     # FastAPI Application
+│   ├── main.py                  # API orchestration and middleware
+│   ├── database.py              # SQLite engine and SQLAlchemy ORM
+│   ├── schemas.py               # Pydantic validation contracts
+│   ├── websocket_manager.py     # Async broadcast hub
+│   ├── seed.py                  # Initial data generator
+│   └── routes/                  # API Routers
+│       ├── auth.py
+│       ├── incidents.py
+│       ├── buses.py
+│       └── traffic.py
+├── frontend/                    # React SPA
+│   ├── index.html
+│   └── src/
+│       ├── App.jsx              # Core layout and state management
+│       ├── components/
+│       │   ├── MapView.jsx      # GIS map and Leaflet popup synchronization
+│       │   ├── DashboardComponents.jsx # Analytics, Vehicles, and KPIs
+│       │   ├── IncidentFeed.jsx
+│       │   ├── IncidentDetail.jsx
+│       │   └── LoginToggle.jsx
+│       ├── context/
+│       │   └── AuthContext.jsx  # Role-based restriction provider
+│       └── hooks/
+│           └── useWebSocket.js  # Socket lifecycle and message parsing
+├── simulator/                   # Route orchestration
+│   ├── bus_simulator.py         # Moving coordinate generation
+│   └── routes_data.py           # Hyderabad lat/lng arrays
+└── deck-ai/                     # Edge AI Pipeline
+    ├── detector.py              # Master evaluation loop
+    ├── pothole_model.py
+    ├── traffic_estimator.py
+    ├── plate_recognizer.py
+    └── config.py
+\\\
 
----
+## 15. Prototype / AI Implementation Status
 
-## Simulated Routes (Hyderabad)
+> **Important Technical Note:** This repository is currently configured as a **demonstration prototype**. It is designed to prove the viability of the end-to-end architecture, dashboard UX, and real-time backend synchronization. 
 
-1. **Secunderabad → HITEC City** (16 waypoints, ~15 km)
-2. **Mehdipatnam → JNTU** (14 waypoints, ~12 km)
-3. **Secunderabad → Charminar** (12 waypoints, ~10 km)
+To guarantee cross-platform compatibility out of the box (without requiring GPUs or heavy PyTorch/Ultralytics installations), the edge AI modules are currently operating in a **simulated/probabilistic** mode. 
 
----
+| Capability | Current Status | Notes |
+|---|---|---|
+| **GIS Dashboard** | Fully Implemented | Production-ready React-Leaflet integration with dynamic popup scrolling. |
+| **WebSocket Hub** | Fully Implemented | True real-time broadcast and frontend state synchronization. |
+| **GPS Telemetry** | Fully Implemented | Vehicles update map locations and trigger dynamic speed calculation. |
+| **Pothole/Damage** | Simulated | pothole_model.py generates deterministic reports based on configurable probabilities rather than actual pixel analysis. |
+| **Hit-and-run OCR** | Mocked | plate_recognizer.py fetches plates from a local JSON registry instead of using EasyOCR/Tesseract. |
+| **Lane/Speed Violations** | Simulated | Derived heuristically from mock telemetry inside detector.py. |
+| **YOLO Integration** | Pluggable | Designed to accept standard Ultralytics YOLOv8 wrappers effortlessly. |
 
-## Swapping in a Real Pothole Model
+## 16. Model Integration / Future AI Upgrade
+The deck-ai module utilizes standard Python class interfaces designed explicitly for drop-in model replacements. To upgrade the system to true AI inference:
+1. Install ultralytics and opencv-python.
+2. Modify deck-ai/pothole_model.py to instantiate a YOLO('trained_model.pt') object.
+3. Pass actual camera arrays (cv2.VideoCapture) into the detect() method instead of relying on the simulator's random frame seeds.
 
-The detection pipeline is designed for easy model swapping:
+## 17. Performance & Reliability
+The current architecture implements several performance safeguards:
+- **WebSocket Deduplication:** The React client utilizes Set-based ID tracking to prevent duplicate incidents from rendering during edge-case race conditions.
+- **Cooldown Timers:** The Python edge pipeline uses timestamp cooldowns (e.g., 300-frame delays) to ensure that a single pothole or overspeeding event isn't spammed to the backend thousands of times a minute.
+- **Responsive Layout Safety:** The map utilizes a strict 4:3 responsive aspect ratio coupled with Leaflet's ResizeObserver, guaranteeing that dynamic dashboard reflows never corrupt the tile canvas or cause vertical component clipping.
 
-```python
-# In deck-ai/config.py, change:
-MODEL_PATH = "yolov8n.pt"
-# to:
-MODEL_PATH = "https://huggingface.co/peterhdd/pothole-detection-yolov8/resolve/main/best.pt"
-```
+## 18. Future Enhancements
+- **True Edge ML Deployment:** Integrating real YOLOv8 models for anomaly detection and EasyOCR for physical plate reading.
+- **Physical Camera Feeds:** Switching the simulator to ingest RTSP streams from municipal hardware.
+- **PostGIS Migration:** Upgrading the SQLite database to PostgreSQL with PostGIS for advanced spatial queries and bounding-box optimizations.
+- **Secure Authentication:** Replacing the mocked role toggle with industry-standard OAuth2 / JWT authentication.
+- **Historical Analysis:** Adding time-series databases to query infrastructural decay across months/years.
 
-Then in `pothole_model.py`, use `YOLOPotholeDetector(MODEL_PATH)` instead of the base `PotholeDetector()`.
+## 19. SIH Relevance / Impact
+Urban Intel provides immense, low-cost value to multiple municipal tiers:
+- **Municipal Authorities:** Can dispatch automated road-repair crews precisely where structural decay is actively detected.
+- **Traffic Police:** Receive immediate geolocation alerts for accidents and hit-and-runs, vastly reducing emergency response times.
+- **Transit Corporations:** Can hold operators accountable by auditing real-time telemetry for reckless driving (overspeeding/lane jumping).
+- **Citizens:** Can view live hazard and congestion maps to make significantly safer and faster commute decisions.
 
----
-
-## License
-
-Built for Smart India Hackathon 2026. Educational/prototype use.
+## 20. License
+Built exclusively for the **Smart India Hackathon 2026**. Educational and prototype use only.
