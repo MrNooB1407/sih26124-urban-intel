@@ -6,7 +6,7 @@ import IncidentFeed from './components/IncidentFeed'
 import AlertBanner from './components/AlertBanner'
 import LoginToggle from './components/LoginToggle'
 import { getIncidents, getBuses, getTrafficZones, seedData } from './utils/api'
-import { Header, KPIRow, VehicleMonitoring, AnalyticsSection, InfrastructureMonitoring, DemoControls, TrafficZoneMonitoring } from './components/DashboardComponents'
+import { Header, KPIRow, VehicleMonitoring, AnalyticsSection, InfrastructureMonitoring, DemoControls, TrafficZoneMonitoring, SystemStatusBar } from './components/DashboardComponents'
 
 function Dashboard() {
   const { role } = useAuth()
@@ -198,6 +198,13 @@ function Dashboard() {
           </div>
         )}
       </main>
+
+      <SystemStatusBar 
+        wsConnected={ws.connected} 
+        busPositions={busPositions} 
+        incidents={incidents} 
+        isAuthority={isAuthority} 
+      />
     </div>
   )
 }

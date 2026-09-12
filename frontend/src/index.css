@@ -719,3 +719,30 @@ th {
   box-shadow: 0 8px 30px rgba(0,0,0,0.5);
   margin-bottom: 5px;
 }
+
+/* System Status Bar */
+.system-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 28px;
+  background: #0d1117;
+  border-top: 1px solid #30363d;
+  padding: 0 16px;
+  font-size: 0.75rem;
+  color: #8b949e;
+  gap: 16px;
+  flex-shrink: 0;
+  font-family: monospace, sans-serif;
+  z-index: 1000;
+}
+
+.system-status-bar .status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.system-status-bar .status-separator {
+  color: #30363d;
+}

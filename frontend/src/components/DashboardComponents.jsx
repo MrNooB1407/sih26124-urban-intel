@@ -462,3 +462,29 @@ export function TrafficZoneMonitoring({ trafficZones }) {
     </div>
   );
 }
+
+export function SystemStatusBar({ wsConnected, busPositions, incidents, isAuthority }) {
+  const activeBusCount = Object.keys(busPositions || {}).length;
+  const incidentCount = (incidents || []).length;
+
+  return (
+    <div className="system-status-bar">
+      <div className="status-item">
+        <span className={`status-dot ${wsConnected ? 'connected pulse' : 'disconnected'}`}></span>
+        {wsConnected ? 'WS: LIVE' : 'WS: OFFLINE'}
+      </div>
+      <div className="status-separator">|</div>
+      <div className="status-item">
+        Deck-AI: NOMINAL · PROTOTYPE
+      </div>
+      <div className="status-separator">|</div>
+      <div className="status-item">
+        {isAuthority ? `Fleet Telemetry: ${activeBusCount}` : 'Public Sensors: ONLINE'}
+      </div>
+      <div className="status-separator">|</div>
+      <div className="status-item">
+        {isAuthority ? `Unresolved Anomalies: ${incidentCount}` : `Active Safety Alerts: ${incidentCount}`}
+      </div>
+    </div>
+  );
+}
