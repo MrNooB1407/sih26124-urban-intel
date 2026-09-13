@@ -40,6 +40,17 @@ export default function useWebSocket() {
               const idx = updated.findIndex(z => 
                 z.route_name === zone.route_name && z.segment_index === zone.segment_index
               )
+              
+              let bottleneck_start = null;
+              if (zone.density_level === 'high') {
+                if (idx >= 0 && updated[idx].density_level === 'high' && updated[idx].bottleneck_start) {
+                  bottleneck_start = updated[idx].bottleneck_start;
+                } else {
+                  bottleneck_start = Date.now();
+                }
+              }
+              zone.bottleneck_start = bottleneck_start;
+
               if (idx >= 0) updated[idx] = zone
               else updated.push(zone)
               return updated

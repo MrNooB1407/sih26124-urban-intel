@@ -170,6 +170,37 @@ export default function MapView({ incidents, busPositions, trafficZones, onIncid
             </LayerGroup>
           </LayersControl.Overlay>
 
+          <LayersControl.Overlay checked name="Active Bottlenecks">
+            <LayerGroup>
+              {trafficZones.map(zone => {
+                if (zone.density_level === 'high' && zone.bottleneck_start && (Date.now() - zone.bottleneck_start >= 20000)) {
+                  const route = routesData[zone.route_name];
+                  if (!route) return null;
+                  const pt1 = route.waypoints[zone.segment_index];
+                  const pt2 = route.waypoints[zone.segment_index + 1];
+                  if (!pt1 || !pt2) return null;
+                  
+                  return (
+                    <Polyline
+                      key={`bottleneck-${zone.route_name}-${zone.segment_index}`}
+                      positions={[pt1, pt2]}
+                      pathOptions={{ color: 'red', weight: 8, className: 'bottleneck-pulse' }}
+                    >
+                      <Popup>
+                        <strong>Persistent Traffic Bottleneck</strong><br/>
+                        Route: {zone.route_name}<br/>
+                        Segment: {zone.segment_index}<br/>
+                        Vehicle Load: {zone.vehicle_count}<br/>
+                        Duration: {Math.floor((Date.now() - zone.bottleneck_start) / 1000)}s
+                      </Popup>
+                    </Polyline>
+                  );
+                }
+                return null;
+              })}
+            </LayerGroup>
+          </LayersControl.Overlay>
+
           <LayersControl.Overlay checked name="Traffic Heatmap">
             <LayerGroup>
               {Object.values(routesData).map(route => (

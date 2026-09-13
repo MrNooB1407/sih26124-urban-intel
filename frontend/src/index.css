@@ -1060,3 +1060,16 @@ th {
   border: 1px solid rgba(139, 148, 158, 0.4);
 }
 
+
+@keyframes bottleneck-pulse {
+  0% { stroke-width: 6; opacity: 0.6; }
+  50% { stroke-width: 12; opacity: 1; filter: drop-shadow(0 0 8px red); }
+  100% { stroke-width: 6; opacity: 0.6; }
+}
+
+.bottleneck-pulse {
+  animation: bottleneck-pulse 1.5s infinite ease-in-out;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+

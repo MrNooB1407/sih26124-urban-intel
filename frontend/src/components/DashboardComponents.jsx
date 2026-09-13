@@ -506,6 +506,43 @@ export function InsightCards({ incidents, trafficZones, busPositions, isAuthorit
     });
   }
 
+    // 1.5. Persistent Traffic Bottlenecks (Authority Only)
+  if (isAuthority) {
+    const now = Date.now();
+    const BOTTLENECK_THRESHOLD_MS = 20000;
+    
+    const bottlenecks = (trafficZones || []).filter(z => 
+      z.density_level === 'high' && 
+      z.bottleneck_start && 
+      (now - z.bottleneck_start >= BOTTLENECK_THRESHOLD_MS)
+    );
+
+    bottlenecks.forEach(z => {
+      const durationSec = Math.floor((now - z.bottleneck_start) / 1000);
+      let actionData = null;
+      const activeBuses = Object.values(busPositions || {});
+      const congestedBus = activeBuses.find(b => b.route_name === z.route_name);
+      if (congestedBus) {
+        actionData = { lat: congestedBus.lat, lng: congestedBus.lng, id: 'traffic_focus' };
+      }
+
+      insights.push({
+        id: "bottleneck_" + z.route_name + "_" + z.segment_index,
+        type: 'warning',
+        title: 'Persistent Traffic Bottleneck',
+        description: (
+          <span>
+            {z.route_name} — Segment {z.segment_index}<br/>
+            High density ({z.vehicle_count} vehicles) observed for {durationSec}s.<br/>
+            <span style={{ fontSize: '0.7rem', color: '#f39c12', fontWeight: 600, display: 'inline-block', marginTop: '4px' }}>RULE-BASED PROTOTYPE INTELLIGENCE</span>
+          </span>
+        ),
+        actionText: 'View Traffic',
+        actionData: actionData
+      });
+    });
+  }
+
   // 2. High Traffic Density
   const highDensityZones = (trafficZones || []).filter(z => z.density_level === 'high');
   const routeCounts = {};
@@ -616,7 +653,7 @@ export function CapabilitiesMatrix() {
         { name: "Traffic Density Estimation", status: "SIMULATED / PROTOTYPE", desc: "Vehicle counting pipeline with prototype/fallback estimation." },
         { name: "Vehicle Counting", status: "SIMULATED / PROTOTYPE" },
         { name: "Vehicle Classification", status: "SIMULATED / PROTOTYPE" },
-        { name: "Bottleneck Detection", status: "PLANNED" },
+        { name: "Bottleneck Detection", status: "SIMULATED / PROTOTYPE", desc: "Rule-based persistence analysis over prototype traffic-zone data." },
         { name: "Overspeeding Detection", status: "SIMULATED / PROTOTYPE" },
         { name: "Lane Violation Detection", status: "SIMULATED / PROTOTYPE" },
         { name: "Rash Driving Detection", status: "PLANNED" },
@@ -714,4 +751,6 @@ export function CapabilitiesMatrix() {
     </div>
   );
 }
+
+
 
