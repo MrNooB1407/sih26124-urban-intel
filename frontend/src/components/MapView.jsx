@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { MapContainer, TileLayer, Polyline, CircleMarker, Marker, Popup, useMap, LayersControl, LayerGroup } from 'react-leaflet'
+﻿import { useEffect, useRef } from 'react'
+import { MapContainer, TileLayer, Polyline, CircleMarker, Circle, Marker, Popup, useMap, LayersControl, LayerGroup } from 'react-leaflet'
 import L from 'leaflet'
 import IncidentDetail from './IncidentDetail'
 import { routesData } from '../config/routesData'
@@ -118,7 +118,7 @@ function IncidentMarker({ inc, isSelected, onIncidentClick }) {
   )
 }
 
-export default function MapView({ incidents, busPositions, trafficZones, onIncidentClick, center, selectedId, isAuthority }) {
+export default function MapView({ incidents, busPositions, trafficZones, hotspots, onIncidentClick, center, selectedId, isAuthority }) {
   const baseRouteWaypoints = routesData["Secunderabad-HITEC"].waypoints;
 
   return (
@@ -229,6 +229,25 @@ export default function MapView({ incidents, busPositions, trafficZones, onIncid
                   }
                   return null
                 })
+              ))}
+            </LayerGroup>
+          </LayersControl.Overlay>
+
+          <LayersControl.Overlay checked name="Incident Hotspots">
+            <LayerGroup>
+              {(hotspots || []).map((h, i) => (
+                <Circle 
+                  key={`hotspot-${i}`} 
+                  center={[h.lat, h.lng]} 
+                  radius={120} 
+                  pathOptions={{ color: 'red', fillColor: 'red', fillOpacity: 0.3 }}
+                >
+                  <Popup>
+                    <strong>INCIDENT HOTSPOT</strong><br/>
+                    Incidents: {h.count}<br/><br/>
+                    <span style={{fontSize: '0.85em', color: '#888'}}>Historical hotspot based on stored incident records.</span>
+                  </Popup>
+                </Circle>
               ))}
             </LayerGroup>
           </LayersControl.Overlay>

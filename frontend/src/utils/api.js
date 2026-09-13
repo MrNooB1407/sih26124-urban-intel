@@ -1,4 +1,4 @@
-import axios from 'axios'
+﻿import axios from 'axios'
 
 const api = axios.create({
   baseURL: '/api',
@@ -15,6 +15,11 @@ export async function getIncidents(role = 'citizen', type = null, start_timestam
 
 export async function getIncident(id, role = 'citizen') {
   const res = await api.get(`/incidents/${id}`, { params: { role } })
+  return res.data
+}
+
+export async function getHotspots() {
+  const res = await api.get('/incidents/hotspots')
   return res.data
 }
 

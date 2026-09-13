@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import useWebSocket from './hooks/useWebSocket'
 import MapView from './components/MapView'
 import IncidentFeed from './components/IncidentFeed'
 import AlertBanner from './components/AlertBanner'
 import LoginToggle from './components/LoginToggle'
-import { getIncidents, getBuses, getTrafficZones, seedData } from './utils/api'
+import { getIncidents, getBuses, getTrafficZones, seedData, getHotspots } from './utils/api'
 import { Header, KPIRow, VehicleMonitoring, AnalyticsSection, InfrastructureMonitoring, DemoControls, TrafficZoneMonitoring, SystemStatusBar, InsightCards, CapabilitiesMatrix } from './components/DashboardComponents'
 
 function Dashboard() {
@@ -18,6 +18,11 @@ function Dashboard() {
   const [selectedIncident, setSelectedIncident] = useState(null)
   const [filterType, setFilterType] = useState(null)
   const [mapCenter, setMapCenter] = useState(null)
+  const [hotspots, setHotspots] = useState([])
+
+  useEffect(() => {
+    getHotspots().then(setHotspots).catch(console.error)
+  }, [])
 
   // Load initial data
   useEffect(() => {
@@ -168,7 +173,7 @@ function Dashboard() {
               {/* Left Column */}
               <div className="col-left">
                 <div className="panel map-panel">
-                  <MapView 
+                  <MapView hotspots={hotspots} 
                     incidents={filteredIncidents}
                     busPositions={busPositions}
                     trafficZones={trafficZones}

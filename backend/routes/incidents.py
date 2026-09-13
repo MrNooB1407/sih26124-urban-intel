@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+﻿from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -79,6 +79,21 @@ async def get_incidents(
     else:
         return [IncidentPublic.model_validate(i).model_dump(mode="json") for i in incidents]
 
+
+from datetime import timedelta
+
+@router.get("/hotspots")
+async def get_hotspots(db: Session = Depends(get_db)):
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    recent = db.query(Incident).filter(Incident.timestamp >= thirty_days_ago).all()
+    
+    grid = {}
+    for inc in recent:
+        cell = (round(inc.lat, 3), round(inc.lng, 3))
+        grid[cell] = grid.get(cell, 0) + 1
+        
+    hotspots = [{"lat": k[0], "lng": k[1], "count": v} for k, v in grid.items() if v >= 3]
+    return hotspots
 
 @router.get("/{incident_id}")
 async def get_incident(
