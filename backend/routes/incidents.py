@@ -49,6 +49,47 @@ async def create_incident(incident_in: IncidentCreate, db: Session = Depends(get
 
 
 from datetime import datetime
+from fastapi.concurrency import run_in_threadpool
+from sqlalchemy import func
+
+@router.get("/analytics")
+async def get_analytics(
+    start_timestamp: Optional[datetime] = None,
+    end_timestamp: Optional[datetime] = None,
+    db: Session = Depends(get_db)
+):
+    """Aggregated historical analytics."""
+    def fetch_analytics():
+        query = db.query(
+            Incident.type,
+            Incident.severity,
+            func.strftime('%Y-%m-%dT%H:00:00Z', Incident.timestamp).label('time_bucket'),
+            func.count(Incident.id).label('count')
+        )
+        if start_timestamp:
+            query = query.filter(Incident.timestamp >= start_timestamp)
+        if end_timestamp:
+            query = query.filter(Incident.timestamp <= end_timestamp)
+            
+        query = query.group_by(
+            Incident.type, 
+            Incident.severity, 
+            func.strftime('%Y-%m-%dT%H:00:00Z', Incident.timestamp)
+        )
+        
+        results = query.all()
+        return [
+            {
+                "type": r.type.value if hasattr(r.type, 'value') else r.type,
+                "severity": r.severity.value if hasattr(r.severity, 'value') else r.severity,
+                "timestamp": r.time_bucket,
+                "count": r.count
+            }
+            for r in results
+        ]
+        
+    return await run_in_threadpool(fetch_analytics)
+
 @router.get("/")
 async def get_incidents(
     type: Optional[IncidentType] = None,
@@ -59,25 +100,28 @@ async def get_incidents(
     db: Session = Depends(get_db),
 ):
     """List incidents. Role controls which fields are returned."""
-    query = db.query(Incident)
-    if type:
-        query = query.filter(Incident.type == type)
-    if severity:
-        query = query.filter(Incident.severity == severity)
-    if start_timestamp:
-        query = query.filter(Incident.timestamp >= start_timestamp)
-    if end_timestamp:
-        query = query.filter(Incident.timestamp <= end_timestamp)
-
-    query = query.order_by(Incident.timestamp.desc())
-    if not start_timestamp and not end_timestamp:
-        query = query.limit(100)
-    incidents = query.all()
-
-    if role == "authority":
-        return [IncidentFull.model_validate(i).model_dump(mode="json") for i in incidents]
-    else:
-        return [IncidentPublic.model_validate(i).model_dump(mode="json") for i in incidents]
+    def fetch_and_serialize():
+        query = db.query(Incident)
+        if type:
+            query = query.filter(Incident.type == type)
+        if severity:
+            query = query.filter(Incident.severity == severity)
+        if start_timestamp:
+            query = query.filter(Incident.timestamp >= start_timestamp)
+        if end_timestamp:
+            query = query.filter(Incident.timestamp <= end_timestamp)
+    
+        query = query.order_by(Incident.timestamp.desc())
+        if not start_timestamp and not end_timestamp:
+            query = query.limit(100)
+        incidents = query.all()
+    
+        if role == "authority":
+            return [IncidentFull.model_validate(i).model_dump(mode="json") for i in incidents]
+        else:
+            return [IncidentPublic.model_validate(i).model_dump(mode="json") for i in incidents]
+            
+    return await run_in_threadpool(fetch_and_serialize)
 
 
 from datetime import timedelta

@@ -18,6 +18,14 @@ export async function getIncident(id, role = 'citizen') {
   return res.data
 }
 
+export async function getHistoricalAnalytics(start, end) {
+  const params = new URLSearchParams()
+  if (start) params.append('start_timestamp', start)
+  if (end) params.append('end_timestamp', end)
+  const res = await api.get(`/incidents/analytics?${params.toString()}`)
+  return res.data
+}
+
 export async function getHotspots() {
   const res = await api.get('/incidents/hotspots')
   return res.data

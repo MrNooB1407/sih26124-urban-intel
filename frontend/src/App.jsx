@@ -5,7 +5,7 @@ import MapView from './components/MapView'
 import IncidentFeed from './components/IncidentFeed'
 import AlertBanner from './components/AlertBanner'
 import LoginToggle from './components/LoginToggle'
-import { getIncidents, getBuses, getTrafficZones, seedData, getHotspots } from './utils/api'
+import { getIncidents, getBuses, getTrafficZones, seedData, getHotspots, getHistoricalAnalytics } from './utils/api'
 import { Header, KPIRow, VehicleMonitoring, AnalyticsSection, InfrastructureMonitoring, DemoControls, TrafficZoneMonitoring, SystemStatusBar, InsightCards, CapabilitiesMatrix } from './components/DashboardComponents'
 
 function Dashboard() {
@@ -124,7 +124,7 @@ function Dashboard() {
       else if (dateRange === '7d') start.setDate(start.getDate() - 7)
       else if (dateRange === '30d') start.setDate(start.getDate() - 30)
 
-      const data = await getIncidents(role, null, start.toISOString(), end.toISOString())
+      const data = await getHistoricalAnalytics(start.toISOString(), end.toISOString())
       setHistoricalIncidents(data)
     } catch (err) {
       console.error('Failed to load historical data:', err)

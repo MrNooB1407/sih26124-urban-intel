@@ -220,7 +220,7 @@ export function VehicleMonitoring({ busPositions, incidents = [], isFullPage = f
 export function AnalyticsSection({ incidents, dateRange, setDateRange, loading, error }) {
   // 1. Overview
   const typeCounts = (incidents || []).reduce((acc, inc) => {
-    acc[inc.type] = (acc[inc.type] || 0) + 1;
+    acc[inc.type] = (acc[inc.type] || 0) + (inc.count || 1);
     return acc;
   }, {});
   const overviewData = Object.keys(typeCounts).map(key => ({
@@ -230,7 +230,7 @@ export function AnalyticsSection({ incidents, dateRange, setDateRange, loading, 
 
   // 2. Severity
   const sevCounts = (incidents || []).reduce((acc, inc) => {
-    acc[inc.severity] = (acc[inc.severity] || 0) + 1;
+    acc[inc.severity] = (acc[inc.severity] || 0) + (inc.count || 1);
     return acc;
   }, {});
   const sevData = [
@@ -249,7 +249,7 @@ export function AnalyticsSection({ incidents, dateRange, setDateRange, loading, 
     const hh = String(date.getHours()).padStart(2, '0');
     const mm = String(date.getMinutes()).padStart(2, '0');
     const bucket = hh + ':' + mm;
-    timeBuckets[bucket] = (timeBuckets[bucket] || 0) + 1;
+    timeBuckets[bucket] = (timeBuckets[bucket] || 0) + (inc.count || 1);
   });
   const trendData = Object.keys(timeBuckets).sort().map(key => ({
     time: key,
@@ -350,8 +350,8 @@ export function InfrastructureMonitoring({ incidents }) {
   const infraTypes = ['pothole', 'road_damage'];
   const driverTypes = ['overspeeding', 'lane_violation'];
 
-  const infraCount = incidents.filter(i => infraTypes.includes(i.type)).length;
-  const driverCount = incidents.filter(i => driverTypes.includes(i.type)).length;
+  const infraCount = incidents.filter(i => infraTypes.includes(i.type)).reduce((sum, i) => sum + (i.count || 1), 0);
+  const driverCount = incidents.filter(i => driverTypes.includes(i.type)).reduce((sum, i) => sum + (i.count || 1), 0);
 
   const data = [
     { name: 'Infrastructure Hazards', count: infraCount, fill: '#ff8c00' },
