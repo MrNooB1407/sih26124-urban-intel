@@ -1,4 +1,4 @@
-﻿"""Deck-AI Detection Orchestrator.
+"""Deck-AI Detection Orchestrator.
 
 Processes video frames from the bus simulator, runs detection models,
 and pushes incidents to the central backend server.
@@ -189,6 +189,7 @@ class DeckAIDetector:
                     "image_path": f"/static/snapshots/{filename}",
                     "plate_number": plate_info["plate_number"],
                     "contact_number": plate_info["contact_number"],
+                    "plate_confidence": plate_info.get("plate_confidence")
                 }
                 
                 print(f"  \033[91m[{bus_id}] ACCIDENT DETECTED! Plate: {plate_info['plate_number']}\033[0m")
@@ -206,6 +207,8 @@ class DeckAIDetector:
                 if excess >= 25: severity = "critical"
                 elif excess >= 15: severity = "high"
                 
+                plate_info = self.plate_recognizer.recognize(frame)
+                
                 overspeeding_data = {
                     "type": "overspeeding",
                     "lat": round(gps_lat, 6),
@@ -214,7 +217,10 @@ class DeckAIDetector:
                     "accuracy": 100.0,
                     "severity": severity,
                     "current_speed": round(speed, 1),
-                    "speed_limit": SPEED_LIMIT
+                    "speed_limit": SPEED_LIMIT,
+                    "plate_number": plate_info["plate_number"] if plate_info else None,
+                    "contact_number": plate_info["contact_number"] if plate_info else None,
+                    "plate_confidence": plate_info.get("plate_confidence") if plate_info else None
                 }
                 print(f"  [{bus_id}] \033[93mOVERSPEEDING ({speed:.1f} > {SPEED_LIMIT})\033[0m")
                 _post_json(f"{BACKEND_URL}/api/incidents/", overspeeding_data)
@@ -232,6 +238,8 @@ class DeckAIDetector:
                 elif current_lane == "Lane 2": severity = "high"
                 else: severity = "medium"
                 
+                plate_info = self.plate_recognizer.recognize(frame)
+                
                 lane_data = {
                     "type": "lane_violation",
                     "lat": round(gps_lat, 6),
@@ -240,7 +248,10 @@ class DeckAIDetector:
                     "accuracy": round(random.uniform(75, 99), 1),
                     "severity": severity,
                     "current_lane": current_lane,
-                    "expected_lane": expected_lane
+                    "expected_lane": expected_lane,
+                    "plate_number": plate_info["plate_number"] if plate_info else None,
+                    "contact_number": plate_info["contact_number"] if plate_info else None,
+                    "plate_confidence": plate_info.get("plate_confidence") if plate_info else None
                 }
                 print(f"  [{bus_id}] \033[95mLANE VIOLATION (in {current_lane})\033[0m")
                 _post_json(f"{BACKEND_URL}/api/incidents/", lane_data)

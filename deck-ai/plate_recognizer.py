@@ -43,8 +43,16 @@ class PlateRecognizer:
         plate_key = random.choice(list(self.registry.keys()))
         entry = self.registry[plate_key]
 
+        # Generate deterministic prototype confidence
+        import hashlib
+        plate_str = entry["plate"]
+        hash_val = int(hashlib.md5(plate_str.encode()).hexdigest(), 16)
+        confidence = 80.0 + (hash_val % 199) / 10.0
+
         return {
-            "plate_number": entry["plate"],
+            "plate_number": plate_str,
             "owner": entry["owner"],
             "contact_number": entry["contact"],
+            "plate_confidence": round(confidence, 1)
         }
+

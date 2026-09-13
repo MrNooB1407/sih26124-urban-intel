@@ -48,14 +48,21 @@ export default function IncidentDetail({ incident, onClose }) {
           <strong>Status:</strong> <span style={{color: '#00ffcc', fontWeight: 'bold'}}>ACTIVE</span>
         </div>
 
-        {role === 'authority' && incident.type === 'accident' && (
+        {role === 'authority' && incident.plate_number && (
           <>
             <div className="detail-row">
-              <strong>Plate No:</strong> {incident.plate_number || 'N/A'}
+              <strong>Plate No:</strong> {incident.plate_number}
             </div>
-            <div className="detail-row">
-              <strong>Contact:</strong> {incident.contact_number || 'N/A'}
-            </div>
+            {incident.plate_confidence && (
+              <div className="detail-row">
+                <strong>Prototype OCR Confidence:</strong> {incident.plate_confidence}%
+              </div>
+            )}
+            {incident.contact_number && (
+              <div className="detail-row">
+                <strong>Contact:</strong> {incident.contact_number}
+              </div>
+            )}
           </>
         )}
 
@@ -136,3 +143,4 @@ export default function IncidentDetail({ incident, onClose }) {
     </div>
   )
 }
+

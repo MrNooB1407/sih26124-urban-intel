@@ -675,8 +675,8 @@ export function CapabilitiesMatrix() {
         { name: "GPS / Location", status: "SIMULATED / PROTOTYPE" },
         { name: "Incident Timestamp", status: "IMPLEMENTED" },
         { name: "Vehicle / Bus Association", status: "IMPLEMENTED" },
-        { name: "ANPR / Registration Numbers", status: "SIMULATED / PROTOTYPE" },
-        { name: "Confidence Scores", status: "SIMULATED / PROTOTYPE" },
+        { name: "ANPR / Registration Numbers", status: "SIMULATED / PROTOTYPE", desc: "Prototype registration-number recognition using simulated/fallback plate data; real OCR is not enabled in the current demo." },
+        { name: "Confidence Scores", status: "SIMULATED / PROTOTYPE", desc: "Confidence scores (including OCR) are deterministically simulated." },
         { name: "Camera Evidence", status: "SIMULATED / PROTOTYPE", desc: "Real video frames with prototype-generated detection geometry." },
       ]
     },
@@ -751,6 +751,8 @@ export function CapabilitiesMatrix() {
     </div>
   );
 }
+
+
 
 
 

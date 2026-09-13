@@ -67,6 +67,7 @@ class Incident(Base):
     severity = Column(SQLEnum(Severity), default=Severity.MEDIUM)
     plate_number = Column(String, nullable=True)
     contact_number = Column(String, nullable=True)
+    plate_confidence = Column(Float, nullable=True)
     
     # Overspeeding / Lane Violation fields
     current_speed = Column(Float, nullable=True)

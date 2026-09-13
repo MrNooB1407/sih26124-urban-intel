@@ -14,6 +14,7 @@ class IncidentCreate(BaseModel):
     image_path: Optional[str] = None
     plate_number: Optional[str] = None
     contact_number: Optional[str] = None
+    plate_confidence: Optional[float] = None
     current_speed: Optional[float] = None
     speed_limit: Optional[float] = None
     current_lane: Optional[str] = None
@@ -41,6 +42,7 @@ class IncidentFull(IncidentPublic):
     bus_id: Optional[str] = None
     plate_number: Optional[str] = None
     contact_number: Optional[str] = None
+    plate_confidence: Optional[float] = None
 
 # --- Bus Position Schemas ---
 class BusPositionCreate(BaseModel):
@@ -85,3 +87,4 @@ class LoginResponse(BaseModel):
     token: str
     role: str
     username: str
+
