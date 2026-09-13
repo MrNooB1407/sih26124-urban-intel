@@ -98,6 +98,37 @@ function Dashboard() {
 
   const [activeTab, setActiveTab] = useState('dashboard')
 
+  const [historicalIncidents, setHistoricalIncidents] = useState([])
+  const [historicalLoading, setHistoricalLoading] = useState(false)
+  const [historicalError, setHistoricalError] = useState(null)
+  const [dateRange, setDateRange] = useState('24h') // 24h, 7d, 30d
+
+  useEffect(() => {
+    if (activeTab === 'analytics') {
+      fetchHistorical()
+    }
+  }, [activeTab, dateRange, role])
+
+  const fetchHistorical = async () => {
+    setHistoricalLoading(true)
+    setHistoricalError(null)
+    try {
+      const end = new Date()
+      const start = new Date()
+      if (dateRange === '24h') start.setHours(start.getHours() - 24)
+      else if (dateRange === '7d') start.setDate(start.getDate() - 7)
+      else if (dateRange === '30d') start.setDate(start.getDate() - 30)
+
+      const data = await getIncidents(role, null, start.toISOString(), end.toISOString())
+      setHistoricalIncidents(data)
+    } catch (err) {
+      console.error('Failed to load historical data:', err)
+      setHistoricalError('Failed to load historical data.')
+    } finally {
+      setHistoricalLoading(false)
+    }
+  }
+
   const filteredIncidents = filterType 
     ? incidents.filter(i => i.type === filterType)
     : incidents
@@ -191,7 +222,7 @@ function Dashboard() {
 
         {activeTab === 'analytics' && (
           <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <AnalyticsSection incidents={incidents} />
+            <AnalyticsSection incidents={historicalIncidents} dateRange={dateRange} setDateRange={setDateRange} loading={historicalLoading} error={historicalError} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <InfrastructureMonitoring incidents={incidents} />
               <TrafficZoneMonitoring trafficZones={trafficZones} />
@@ -227,3 +258,5 @@ export default function App() {
     </AuthProvider>
   )
 }
+
+

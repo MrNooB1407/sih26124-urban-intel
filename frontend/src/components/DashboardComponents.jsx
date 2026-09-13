@@ -1,4 +1,4 @@
-import React from 'react';
+ï»¿import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import { AlertTriangle, Car, Gauge, Activity, Navigation, Zap } from 'lucide-react';
 
@@ -217,9 +217,9 @@ export function VehicleMonitoring({ busPositions, incidents = [], isFullPage = f
   );
 }
 
-export function AnalyticsSection({ incidents }) {
+export function AnalyticsSection({ incidents, dateRange, setDateRange, loading, error }) {
   // 1. Overview
-  const typeCounts = incidents.reduce((acc, inc) => {
+  const typeCounts = (incidents || []).reduce((acc, inc) => {
     acc[inc.type] = (acc[inc.type] || 0) + 1;
     return acc;
   }, {});
@@ -229,7 +229,7 @@ export function AnalyticsSection({ incidents }) {
   }));
 
   // 2. Severity
-  const sevCounts = incidents.reduce((acc, inc) => {
+  const sevCounts = (incidents || []).reduce((acc, inc) => {
     acc[inc.severity] = (acc[inc.severity] || 0) + 1;
     return acc;
   }, {});
@@ -242,7 +242,7 @@ export function AnalyticsSection({ incidents }) {
 
   // 3. Trends
   const timeBuckets = {};
-  incidents.forEach(inc => {
+  (incidents || []).forEach(inc => {
     if (!inc.timestamp) return;
     const date = new Date(inc.timestamp.endsWith('Z') ? inc.timestamp : inc.timestamp + 'Z');
     if (isNaN(date.getTime())) return;
@@ -258,64 +258,90 @@ export function AnalyticsSection({ incidents }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div className="panel analytics-section">
-        <h2>Incident Overview</h2>
-        {overviewData.length === 0 ? (
-           <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>No incidents recorded yet.</div>
-        ) : (
-          <div style={{ width: '100%', height: 220, marginTop: '20px' }}>
-            <ResponsiveContainer>
-              <BarChart data={overviewData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="name" stroke="#888" fontSize={10} tickMargin={10} />
-                <YAxis stroke="#888" allowDecimals={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#fff' }} itemStyle={{color: '#00ffcc'}} cursor={{fill: '#2a2a2a'}} />
-                <Bar dataKey="count" fill="#00ffcc" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+      <div className="panel analytics-section" style={{ paddingBottom: '15px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ margin: 0 }}>Analytics Intelligence</h2>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <label style={{ color: '#888', fontSize: '0.9rem' }}>Date Range:</label>
+            <select 
+              value={dateRange || '24h'} 
+              onChange={(e) => setDateRange && setDateRange(e.target.value)}
+              style={{ background: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', padding: '6px 12px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="24h">Last 24 Hours</option>
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+            </select>
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="panel analytics-section">
-        <h2>Severity Distribution</h2>
-        {sevData.length === 0 ? (
-           <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>No severity data available.</div>
-        ) : (
-          <div style={{ width: '100%', height: 220, marginTop: '10px' }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie data={sevData} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5}>
-                  {sevData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#fff' }} itemStyle={{color: '#fff'}} />
-                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '12px' }}/>
-              </PieChart>
-            </ResponsiveContainer>
+      {error ? (
+        <div className="panel analytics-section">
+           <div style={{ padding: '20px', textAlign: 'center', color: '#ff3333' }}>{error}</div>
+        </div>
+      ) : loading ? (
+        <div className="panel analytics-section">
+           <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>Loading historical data...</div>
+        </div>
+      ) : (!incidents || incidents.length === 0) ? (
+        <div className="panel analytics-section">
+           <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>No incidents recorded for this period.</div>
+        </div>
+      ) : (
+        <>
+          <div className="panel analytics-section">
+            <h2>Incident Overview</h2>
+            <div style={{ width: '100%', height: 220, marginTop: '20px' }}>
+              <ResponsiveContainer>
+                <BarChart data={overviewData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                  <XAxis dataKey="name" stroke="#888" fontSize={10} tickMargin={10} />
+                  <YAxis stroke="#888" allowDecimals={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#fff' }} itemStyle={{color: '#00ffcc'}} cursor={{fill: '#2a2a2a'}} />
+                  <Bar dataKey="count" fill="#00ffcc" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        )}
-      </div>
 
-      <div className="panel analytics-section">
-        <h2>Incident Trends</h2>
-        {trendData.length <= 1 ? (
-          <div style={{ padding: '40px 20px', textAlign: 'center', color: '#888' }}>
-            Gathering historical data... Need multiple timestamps to form a trend.
+          <div className="panel analytics-section">
+            <h2>Severity Distribution</h2>
+            <div style={{ width: '100%', height: 220, marginTop: '10px' }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie data={sevData} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5}>
+                    {sevData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#fff' }} itemStyle={{color: '#fff'}} />
+                  <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '12px' }}/>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        ) : (
-          <div style={{ width: '100%', height: 220, marginTop: '20px' }}>
-            <ResponsiveContainer>
-              <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="time" stroke="#888" fontSize={10} tickMargin={10} />
-                <YAxis stroke="#888" allowDecimals={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#fff' }} itemStyle={{color: '#f39c12'}} />
-                <Line type="monotone" dataKey="incidents" stroke="#f39c12" strokeWidth={3} dot={{ r: 4, fill: '#f39c12' }} />
-              </LineChart>
-            </ResponsiveContainer>
+
+          <div className="panel analytics-section">
+            <h2>Incident Trends</h2>
+            {trendData.length <= 1 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#888' }}>
+                Gathering historical data... Need multiple timestamps to form a trend.
+              </div>
+            ) : (
+              <div style={{ width: '100%', height: 220, marginTop: '20px' }}>
+                <ResponsiveContainer>
+                  <LineChart data={trendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="time" stroke="#888" fontSize={10} tickMargin={10} />
+                    <YAxis stroke="#888" allowDecimals={false} />
+                    <Tooltip contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#fff' }} itemStyle={{color: '#f39c12'}} />
+                    <Line type="monotone" dataKey="incidents" stroke="#f39c12" strokeWidth={3} dot={{ r: 4, fill: '#f39c12' }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -532,7 +558,7 @@ export function InsightCards({ incidents, trafficZones, busPositions, isAuthorit
         title: 'Persistent Traffic Bottleneck',
         description: (
           <span>
-            {z.route_name} — Segment {z.segment_index}<br/>
+            {z.route_name} ï¿½ Segment {z.segment_index}<br/>
             High density ({z.vehicle_count} vehicles) observed for {durationSec}s.<br/>
             <span style={{ fontSize: '0.7rem', color: '#f39c12', fontWeight: 600, display: 'inline-block', marginTop: '4px' }}>RULE-BASED PROTOTYPE INTELLIGENCE</span>
           </span>
@@ -700,7 +726,7 @@ export function CapabilitiesMatrix() {
       items: [
         { name: "Origin-Destination Analysis", status: "PLANNED" },
         { name: "Route Delay Estimation", status: "PLANNED" },
-        { name: "Historical Analysis", status: "PARTIAL" },
+        { name: "Historical Analysis", status: "IMPLEMENTED", desc: "Historical incident analysis using date-range filtering over stored incident records." },
         { name: "Predictive Traffic / Incident Detection", status: "PLANNED" },
       ]
     }
@@ -751,6 +777,12 @@ export function CapabilitiesMatrix() {
     </div>
   );
 }
+
+
+
+
+
+
 
 
 

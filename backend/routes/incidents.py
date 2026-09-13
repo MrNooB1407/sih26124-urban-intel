@@ -48,10 +48,13 @@ async def create_incident(incident_in: IncidentCreate, db: Session = Depends(get
     return db_incident
 
 
+from datetime import datetime
 @router.get("/")
 async def get_incidents(
     type: Optional[IncidentType] = None,
     severity: Optional[Severity] = None,
+    start_timestamp: Optional[datetime] = None,
+    end_timestamp: Optional[datetime] = None,
     role: str = Query("citizen"),
     db: Session = Depends(get_db),
 ):
@@ -61,8 +64,15 @@ async def get_incidents(
         query = query.filter(Incident.type == type)
     if severity:
         query = query.filter(Incident.severity == severity)
+    if start_timestamp:
+        query = query.filter(Incident.timestamp >= start_timestamp)
+    if end_timestamp:
+        query = query.filter(Incident.timestamp <= end_timestamp)
 
-    incidents = query.order_by(Incident.timestamp.desc()).limit(100).all()
+    query = query.order_by(Incident.timestamp.desc())
+    if not start_timestamp and not end_timestamp:
+        query = query.limit(100)
+    incidents = query.all()
 
     if role == "authority":
         return [IncidentFull.model_validate(i).model_dump(mode="json") for i in incidents]
@@ -85,3 +95,5 @@ async def get_incident(
         return IncidentFull.model_validate(incident).model_dump(mode="json")
     else:
         return IncidentPublic.model_validate(incident).model_dump(mode="json")
+
+
