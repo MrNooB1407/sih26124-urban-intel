@@ -49,8 +49,10 @@ class PotholeDetector:
             # Random bounding box on lower half of frame (road area)
             x1 = random.randint(w // 4, 3 * w // 4 - 50)
             y1 = random.randint(h // 2, h - 50)
-            x2 = x1 + random.randint(30, 80)
-            y2 = y1 + random.randint(20, 50)
+            box_width = int(w * random.uniform(0.08, 0.15))
+            box_height = int(h * random.uniform(0.08, 0.15))
+            x2 = min(x1 + box_width, w)
+            y2 = min(y1 + box_height, h)
             
             confidence = random.uniform(55, 97)
             
