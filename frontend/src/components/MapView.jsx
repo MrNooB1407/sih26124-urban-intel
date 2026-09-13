@@ -2,13 +2,7 @@ import { useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Polyline, CircleMarker, Marker, Popup, useMap, LayersControl, LayerGroup } from 'react-leaflet'
 import L from 'leaflet'
 import IncidentDetail from './IncidentDetail'
-
-const ROUTE_WAYPOINTS = [
-  [17.4334, 78.5016], [17.4428, 78.4872], [17.4442, 78.4776], [17.4455, 78.4682],
-  [17.4412, 78.4556], [17.4265, 78.4528], [17.4248, 78.4485], [17.4194, 78.4452],
-  [17.4230, 78.4320], [17.4290, 78.4110], [17.4338, 78.4005], [17.4395, 78.3905],
-  [17.4504, 78.3808], [17.4415, 78.3802], [17.4312, 78.3705], [17.4372, 78.3444],
-]
+import { routesData } from '../config/routesData'
 
 function MapUpdater({ center }) {
   const map = useMap()
@@ -125,6 +119,8 @@ function IncidentMarker({ inc, isSelected, onIncidentClick }) {
 }
 
 export default function MapView({ incidents, busPositions, trafficZones, onIncidentClick, center, selectedId, isAuthority }) {
+  const baseRouteWaypoints = routesData["Secunderabad-HITEC"].waypoints;
+
   return (
     <div style={{ height: '100%', width: '100%', position: 'relative' }}>
       <MapContainer 
@@ -143,7 +139,7 @@ export default function MapView({ incidents, busPositions, trafficZones, onIncid
           <LayersControl.Overlay checked name="Base Routes">
             <LayerGroup>
               <Polyline 
-                positions={ROUTE_WAYPOINTS} 
+                positions={baseRouteWaypoints} 
                 pathOptions={{ color: 'blue', weight: 3, opacity: 0.6, dashArray: '5, 10' }} 
               />
             </LayerGroup>
@@ -151,24 +147,26 @@ export default function MapView({ incidents, busPositions, trafficZones, onIncid
 
           <LayersControl.Overlay checked name="Traffic Density">
             <LayerGroup>
-              {ROUTE_WAYPOINTS.slice(0, -1).map((pt1, i) => {
-                const pt2 = ROUTE_WAYPOINTS[i + 1]
-                const zone = trafficZones.find(z => z.segment_index === i && z.route_name === 'Secunderabad-HITEC')
-                if (zone) {
-                  return (
-                    <Polyline
-                      key={`traffic-${i}`}
-                      positions={[pt1, pt2]}
-                      pathOptions={{ 
-                        color: trafficColors[zone.density_level] || trafficColors.normal, 
-                        weight: 6, 
-                        opacity: 0.8 
-                      }}
-                    />
-                  )
-                }
-                return null
-              })}
+              {Object.values(routesData).map(route => (
+                route.waypoints.slice(0, -1).map((pt1, i) => {
+                  const pt2 = route.waypoints[i + 1]
+                  const zone = trafficZones.find(z => z.segment_index === i && z.route_name === route.name)
+                  if (zone) {
+                    return (
+                      <Polyline
+                        key={`traffic-${route.name}-${i}`}
+                        positions={[pt1, pt2]}
+                        pathOptions={{ 
+                          color: trafficColors[zone.density_level] || trafficColors.normal, 
+                          weight: 6, 
+                          opacity: 0.8 
+                        }}
+                      />
+                    )
+                  }
+                  return null
+                })
+              ))}
             </LayerGroup>
           </LayersControl.Overlay>
 
@@ -205,13 +203,19 @@ export default function MapView({ incidents, busPositions, trafficZones, onIncid
             </LayersControl.Overlay>
           )}
 
-          {isAuthority && (
-            <LayersControl.Overlay checked name="Fleet Routes">
-              <LayerGroup>
-                <Polyline positions={ROUTE_WAYPOINTS} color="#00ffcc" weight={3} opacity={0.5} />
-              </LayerGroup>
-            </LayersControl.Overlay>
-          )}
+          {isAuthority && Object.values(routesData).map(route => {
+            const assignedBus = Object.values(busPositions).find(b => b.route_name === route.name)
+            const busPrefix = assignedBus ? assignedBus.bus_id : "BUS"
+            const label = `${busPrefix} — ${route.name}`
+            
+            return (
+              <LayersControl.Overlay key={route.name} checked name={label}>
+                <LayerGroup>
+                  <Polyline positions={route.waypoints} color="#00ffcc" weight={3} opacity={0.5} />
+                </LayerGroup>
+              </LayersControl.Overlay>
+            )
+          })}
         </LayersControl>
 
       </MapContainer>

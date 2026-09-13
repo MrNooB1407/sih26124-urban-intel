@@ -84,13 +84,20 @@ def run_bus(bus_id, route_name, video_path, speed_multiplier=10, backend_url="ht
     
     start_time = time.time()
     frames_processed = 0
+    direction = 1
+    last_frame = -1
     
     while True:
         frame = player.get_frame()
         if frame is None:
             break
         
-        progress = player.progress()
+        if player.current_frame < last_frame:
+            direction *= -1
+        last_frame = player.current_frame
+        
+        raw_progress = player.progress()
+        progress = raw_progress if direction == 1 else 1.0 - raw_progress
         
         # Interpolate GPS position
         lat, lng = interpolate_position(waypoints, progress)
@@ -118,11 +125,6 @@ def run_bus(bus_id, route_name, video_path, speed_multiplier=10, backend_url="ht
         
         # Rate limiting
         time.sleep(frame_delay)
-        
-        # Stop after one complete route traversal
-        if progress >= 1.0:
-            print(f"  [{bus_id}] Route complete!")
-            break
     
     player.release()
     print(f"[{bus_id}] Finished. Processed {frames_processed} frames.")
