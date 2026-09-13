@@ -170,6 +170,38 @@ export default function MapView({ incidents, busPositions, trafficZones, onIncid
             </LayerGroup>
           </LayersControl.Overlay>
 
+          <LayersControl.Overlay checked name="Traffic Heatmap">
+            <LayerGroup>
+              {Object.values(routesData).map(route => (
+                route.waypoints.slice(0, -1).map((pt1, i) => {
+                  const pt2 = route.waypoints[i + 1]
+                  const zone = trafficZones.find(z => z.segment_index === i && z.route_name === route.name)
+                  if (zone && pt1 && pt2) {
+                    const fractions = [0.2, 0.4, 0.6, 0.8]
+                    return fractions.map(fraction => {
+                      const lat = pt1[0] + (pt2[0] - pt1[0]) * fraction
+                      const lng = pt1[1] + (pt2[1] - pt1[1]) * fraction
+                      const radius = Math.min(12 + (zone.vehicle_count * 1.5), 40)
+                      const color = trafficColors[zone.density_level] || trafficColors.normal
+                      return (
+                        <CircleMarker
+                          key={`heat-${route.name}-${i}-${fraction}`}
+                          center={[lat, lng]}
+                          radius={radius}
+                          stroke={false}
+                          fillColor={color}
+                          fillOpacity={0.4}
+                          className="heatmap-point"
+                        />
+                      )
+                    })
+                  }
+                  return null
+                })
+              ))}
+            </LayerGroup>
+          </LayersControl.Overlay>
+
           <LayersControl.Overlay checked name="Live Incidents">
             <LayerGroup>
               {incidents.map(inc => (

@@ -928,3 +928,8 @@ th {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.heatmap-point {
+  filter: blur(4px);
+}
+
