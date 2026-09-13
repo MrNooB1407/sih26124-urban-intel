@@ -17,6 +17,7 @@ export function Header({ wsConnected, activeTab, setActiveTab, isAuthority }) {
       <div className="header-nav">
         <span className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>Dashboard</span>
         <span className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>Analytics</span>
+        <span className={`nav-item ${activeTab === 'capabilities' ? 'active' : ''}`} onClick={() => setActiveTab('capabilities')}>System Capabilities</span>
         {isAuthority && (
           <span className={`nav-item ${activeTab === 'vehicles' ? 'active' : ''}`} onClick={() => setActiveTab('vehicles')}>Vehicles</span>
         )}
@@ -594,3 +595,123 @@ export function InsightCards({ incidents, trafficZones, busPositions, isAuthorit
     </div>
   );
 }
+
+export function CapabilitiesMatrix() {
+  const capabilities = [
+    {
+      category: "Edge AI & Vision",
+      items: [
+        { name: "Pothole Detection", status: "SIMULATED / PROTOTYPE", desc: "YOLOv8 when available; synthetic fallback for prototype operation." },
+        { name: "Road Damage Detection", status: "SIMULATED / PROTOTYPE" },
+        { name: "Missing Road Divider Detection", status: "PLANNED" },
+        { name: "Zebra Crossing Detection", status: "PLANNED" },
+        { name: "Road Sign Detection", status: "PLANNED" },
+        { name: "Waterlogging / Flooding Detection", status: "PLANNED" },
+        { name: "Other Road Hazards", status: "PLANNED" },
+      ]
+    },
+    {
+      category: "Traffic & Driver Behavior",
+      items: [
+        { name: "Traffic Density Estimation", status: "SIMULATED / PROTOTYPE", desc: "Vehicle counting pipeline with prototype/fallback estimation." },
+        { name: "Vehicle Counting", status: "SIMULATED / PROTOTYPE" },
+        { name: "Vehicle Classification", status: "SIMULATED / PROTOTYPE" },
+        { name: "Bottleneck Detection", status: "PLANNED" },
+        { name: "Overspeeding Detection", status: "SIMULATED / PROTOTYPE" },
+        { name: "Lane Violation Detection", status: "SIMULATED / PROTOTYPE" },
+        { name: "Rash Driving Detection", status: "PLANNED" },
+      ]
+    },
+    {
+      category: "Emergency & Safety",
+      items: [
+        { name: "Accident Detection", status: "SIMULATED / PROTOTYPE", desc: "Prototype event generation using simulated detection logic." },
+        { name: "Hit-and-Run Detection", status: "PLANNED" },
+        { name: "Pedestrian / Child Safety", status: "PLANNED" },
+        { name: "Emergency Alerts", status: "PLANNED" },
+      ]
+    },
+    {
+      category: "Identification & Evidence",
+      items: [
+        { name: "Camera / Video Input", status: "SIMULATED / PROTOTYPE" },
+        { name: "GPS / Location", status: "SIMULATED / PROTOTYPE" },
+        { name: "Incident Timestamp", status: "IMPLEMENTED" },
+        { name: "Vehicle / Bus Association", status: "IMPLEMENTED" },
+        { name: "ANPR / Registration Numbers", status: "SIMULATED / PROTOTYPE" },
+        { name: "Confidence Scores", status: "SIMULATED / PROTOTYPE" },
+        { name: "Camera Evidence", status: "SIMULATED / PROTOTYPE", desc: "Real video frames with prototype-generated detection geometry." },
+      ]
+    },
+    {
+      category: "GIS & Real-Time Operations",
+      items: [
+        { name: "Live Incident Map", status: "IMPLEMENTED" },
+        { name: "Traffic Density Visualization", status: "IMPLEMENTED" },
+        { name: "Traffic Heatmap", status: "IMPLEMENTED" },
+        { name: "Individual Bus Routes", status: "IMPLEMENTED" },
+        { name: "Live Fleet Telemetry", status: "IMPLEMENTED" },
+        { name: "Traffic Zones", status: "IMPLEMENTED" },
+        { name: "Incident ? Map Interaction", status: "IMPLEMENTED" },
+        { name: "Analytics", status: "IMPLEMENTED" },
+        { name: "Authority / Citizen Roles", status: "IMPLEMENTED" },
+        { name: "WebSocket Real-Time Updates", status: "IMPLEMENTED" },
+      ]
+    },
+    {
+      category: "Advanced Analytics",
+      items: [
+        { name: "Origin-Destination Analysis", status: "PLANNED" },
+        { name: "Route Delay Estimation", status: "PLANNED" },
+        { name: "Historical Analysis", status: "PARTIAL" },
+        { name: "Predictive Traffic / Incident Detection", status: "PLANNED" },
+      ]
+    }
+  ];
+
+  const getBadgeClass = (status) => {
+    switch(status) {
+      case 'IMPLEMENTED': return 'badge-implemented';
+      case 'SIMULATED / PROTOTYPE': return 'badge-simulated';
+      case 'PARTIAL': return 'badge-partial';
+      case 'PLANNED': return 'badge-planned';
+      default: return '';
+    }
+  };
+
+  return (
+    <div className="capabilities-container">
+      <div className="transparency-banner">
+        <h2>Prototype Capability Status</h2>
+        <p>Urban Intel combines implemented application infrastructure with prototype AI inference and simulated sensing. This view clearly distinguishes what is operational in the current prototype from capabilities planned for production deployment.</p>
+        <div className="capability-legend">
+          <div className="legend-item"><span className="badge badge-implemented">IMPLEMENTED</span> Working in the current prototype using the implemented application architecture.</div>
+          <div className="legend-item"><span className="badge badge-simulated">SIMULATED / PROTOTYPE</span> End-to-end prototype capability, but relying on simulation, fallback models, or demo data.</div>
+          <div className="legend-item"><span className="badge badge-partial">PARTIAL</span> Some components are implemented, but the complete capability is not.</div>
+          <div className="legend-item"><span className="badge badge-planned">PLANNED</span> Not currently implemented; intended for a future phase.</div>
+        </div>
+      </div>
+      <div className="dashboard-grid capabilities-grid">
+        {capabilities.map((cat, idx) => (
+          <div className="panel capability-card" key={idx}>
+            <div className="panel-header">
+              <h3>{cat.category}</h3>
+            </div>
+            <div className="capability-list">
+              {cat.items.map((item, i) => (
+                <div className="capability-row" key={i}>
+                  <div className="capability-info">
+                    <span className="capability-name">{item.name}</span>
+                    {item.desc && <span className="capability-desc">{item.desc}</span>}
+                  </div>
+                  <span className={`badge ${getBadgeClass(item.status)}`}>{item.status}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+

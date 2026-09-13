@@ -933,3 +933,130 @@ th {
   filter: blur(4px);
 }
 
+
+/* System Capabilities */
+.capabilities-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px;
+}
+
+.transparency-banner {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.transparency-banner h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #e6edf3;
+  font-size: 1.4rem;
+}
+
+.transparency-banner p {
+  color: #8b949e;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.capability-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  background: #0d1117;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #c9d1d9;
+}
+
+.capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.capability-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.capability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.capability-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  gap: 15px;
+}
+
+.capability-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.capability-name {
+  color: #e6edf3;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.capability-desc {
+  color: #8b949e;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.badge-implemented {
+  background: rgba(46, 160, 67, 0.15);
+  color: #3fb950;
+  border: 1px solid rgba(46, 160, 67, 0.4);
+}
+
+.badge-simulated {
+  background: rgba(210, 153, 34, 0.15);
+  color: #d29922;
+  border: 1px solid rgba(210, 153, 34, 0.4);
+}
+
+.badge-partial {
+  background: rgba(56, 139, 253, 0.15);
+  color: #58a6ff;
+  border: 1px solid rgba(56, 139, 253, 0.4);
+}
+
+.badge-planned {
+  background: rgba(139, 148, 158, 0.15);
+  color: #8b949e;
+  border: 1px solid rgba(139, 148, 158, 0.4);
+}
+
