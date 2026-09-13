@@ -1,5 +1,5 @@
 """
-start_all.py One-command launcher for the Urban Intelligence Platform.
+start_all.py One-command launcher for the City Scout.
 
 Starts backend, frontend dev server, seeds mock data, and launches the bus simulator.
 Usage: python start_all.py [--buses N] [--speed X]
@@ -37,7 +37,7 @@ def cleanup(signum=None, frame=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Urban Intelligence Platform Launcher")
+    parser = argparse.ArgumentParser(description="City Scout Launcher")
     parser.add_argument("--buses", type=int, default=3, choices=[1, 2, 3],
                         help="Number of simulated buses (default: 3)")
     parser.add_argument("--speed", type=float, default=10.0,
@@ -52,7 +52,7 @@ def main():
     signal.signal(signal.SIGTERM, cleanup)
 
     print("=" * 60)
-    print("=== Urban Intelligence Platform - Starting All Services ===")
+    print("=== City Scout - Starting All Services ===")
     print("=" * 60)
 
     # 1. Start Backend

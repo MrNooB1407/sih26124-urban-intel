@@ -1,17 +1,17 @@
-﻿# 🚌 Urban Intel
-AI-Powered Mobile Urban Intelligence Platform
+﻿# 🚌 City Scout
+AI-Powered Mobile City Scoutligence Platform
 
 **SIH 2026 — Problem Statement SIH26124**  
 *Sponsor: Bharat Electronics Limited*
 
 ## 1. Overview
-Cameras mounted on public transit buses can serve as continuous, mobile sensing units traversing city infrastructure. Urban Intel leverages this concept by processing visual and video data at the edge to detect road hazards, accidents, and traffic conditions. Detected incidents are immediately geotagged, filtered, and dispatched to a central backend. A real-time, interactive dashboard empowers both city authorities and citizens with actionable, role-based insights.
+Cameras mounted on public transit buses can serve as continuous, mobile sensing units traversing city infrastructure. City Scout leverages this concept by processing visual and video data at the edge to detect road hazards, accidents, and traffic conditions. Detected incidents are immediately geotagged, filtered, and dispatched to a central backend. A real-time, interactive dashboard empowers both city authorities and citizens with actionable, role-based insights.
 
 ## 2. Problem Statement
 Urban infrastructure maintenance and road safety monitoring typically rely on manual reporting or stationary CCTV cameras, which provide limited coverage and slow response times. Potholes go unaddressed, hit-and-run accidents lack immediate actionable intelligence, and traffic congestion data is often delayed. There is a need for a dynamic, city-wide monitoring system capable of proactively detecting and reporting these issues.
 
 ## 3. Proposed Solution
-Urban Intel transforms standard city buses into an intelligent IoT fleet. A lightweight AI edge pipeline (Deck-AI) processes dashboard camera feeds to identify road damage, estimate vehicle density, and capture driver violations like overspeeding or erratic lane changes. The central cloud architecture receives these anomalies in real-time, persists them to a database, and broadcasts them via WebSockets to a responsive React-Leaflet GIS dashboard, facilitating instant emergency response and long-term infrastructural analytics.
+City Scout transforms standard city buses into an intelligent IoT fleet. A lightweight AI edge pipeline (Deck-AI) processes dashboard camera feeds to identify road damage, estimate vehicle density, and capture driver violations like overspeeding or erratic lane changes. The central cloud architecture receives these anomalies in real-time, persists them to a database, and broadcasts them via WebSockets to a responsive React-Leaflet GIS dashboard, facilitating instant emergency response and long-term infrastructural analytics.
 
 ## 4. Key Features
 
@@ -111,7 +111,7 @@ graph TD
 7. **Interactive UX:** The UI re-renders instantly: updating KPI charts, shifting traffic segment colors, moving bus icons, and spawning incident markers on the interactive Leaflet map.
 
 ## 7. Citizen vs Authority
-Urban Intel enforces strict role-based data presentation.
+City Scout enforces strict role-based data presentation.
 - **Citizen:** Access is limited to public awareness. Citizens can view road hazards, general accident locations, and overall traffic density to plan safe travel. The UI inherently suppresses sensitive fleet markers, bus IDs, plate numbers, and driver infractions.
 - **Authority:** Unrestricted access intended for municipal administrators or transit managers. Includes total fleet visibility, live vehicle tracking, specific driver accountability metrics (lane/speed violations), and actionable emergency data like OCR-scraped license plates and driver contact numbers.
 
@@ -266,7 +266,7 @@ The current architecture implements several performance safeguards:
 - **Historical Analysis:** Adding time-series databases to query infrastructural decay across months/years.
 
 ## 19. SIH Relevance / Impact
-Urban Intel provides immense, low-cost value to multiple municipal tiers:
+City Scout provides immense, low-cost value to multiple municipal tiers:
 - **Municipal Authorities:** Can dispatch automated road-repair crews precisely where structural decay is actively detected.
 - **Traffic Police:** Receive immediate geolocation alerts for accidents and hit-and-runs, vastly reducing emergency response times.
 - **Transit Corporations:** Can hold operators accountable by auditing real-time telemetry for reckless driving (overspeeding/lane jumping).

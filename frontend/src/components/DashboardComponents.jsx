@@ -8,7 +8,7 @@ export function Header({ wsConnected, activeTab, setActiveTab, isAuthority }) {
       <div className="header-brand">
         <Activity size={24} color="#00ffcc" />
         <div>
-          <h1>Urban Intel</h1>
+          <h1>City Scout</h1>
           <span className="subtitle" style={{ color: isAuthority ? '#f39c12' : '#00ffcc', fontWeight: '500', letterSpacing: '0.5px' }}>
             {isAuthority ? 'AUTHORITY COMMAND CENTER' : 'PUBLIC SAFETY | Real-time road hazards and traffic alerts'}
           </span>
@@ -746,7 +746,7 @@ export function CapabilitiesMatrix() {
     <div className="capabilities-container">
       <div className="transparency-banner">
         <h2>Prototype Capability Status</h2>
-        <p>Urban Intel combines implemented application infrastructure with prototype AI inference and simulated sensing. This view clearly distinguishes what is operational in the current prototype from capabilities planned for production deployment.</p>
+        <p>City Scout combines implemented application infrastructure with prototype AI inference and simulated sensing. This view clearly distinguishes what is operational in the current prototype from capabilities planned for production deployment.</p>
         <div className="capability-legend">
           <div className="legend-item"><span className="badge badge-implemented">IMPLEMENTED</span> Working in the current prototype using the implemented application architecture.</div>
           <div className="legend-item"><span className="badge badge-simulated">SIMULATED / PROTOTYPE</span> End-to-end prototype capability, but relying on simulation, fallback models, or demo data.</div>

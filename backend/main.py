@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown
 
-app = FastAPI(title="Urban Intelligence Platform", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="City Scout", version="1.0.0", lifespan=lifespan)
 
 # CORS — allow frontend dev server
 app.add_middleware(
@@ -56,4 +56,4 @@ async def websocket_endpoint(websocket: WebSocket):
 # Health check
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "Urban Intelligence Platform"}
+    return {"status": "ok", "service": "City Scout"}
