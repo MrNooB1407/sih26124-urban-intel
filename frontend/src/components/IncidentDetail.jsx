@@ -1,7 +1,13 @@
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 export default function IncidentDetail({ incident, onClose }) {
   const { role } = useAuth()
+  const [imageError, setImageError] = useState(false)
+  
+  useEffect(() => {
+    setImageError(false)
+  }, [incident?.image_path])
   
   if (!incident) return null
 
@@ -17,7 +23,7 @@ export default function IncidentDetail({ incident, onClose }) {
             {incident.severity}
           </span>
         </div>
-        <button className="detail-panel-close" onClick={onClose}>✕</button>
+        <button className="detail-panel-close" onClick={onClose}>×</button>
       </div>
 
       <div className="detail-content">
@@ -79,11 +85,52 @@ export default function IncidentDetail({ incident, onClose }) {
         )}
 
         {incident.image_path && (
-          <img 
-            src={`http://localhost:8000${incident.image_path}`} 
-            alt="Incident snapshot" 
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
+          <div className="camera-evidence">
+            <div className="camera-evidence-header">
+              <h4>Camera Evidence</h4>
+              <div className="camera-evidence-badges">
+                <span className="badge-real">REAL VIDEO FRAME</span>
+                <span className="badge-proto">PROTOTYPE INFERENCE</span>
+              </div>
+            </div>
+            
+            <div className="camera-evidence-content">
+              {imageError ? (
+                <div className="camera-evidence-fallback">
+                  <strong>Evidence unavailable</strong>
+                  <span>The source frame could not be loaded.</span>
+                </div>
+              ) : (
+                <img 
+                  className="camera-evidence-image"
+                  src={`http://localhost:8000${incident.image_path}`} 
+                  alt="Incident snapshot" 
+                  onError={() => setImageError(true)}
+                />
+              )}
+            </div>
+
+            <div className="camera-evidence-meta">
+              <div className="meta-grid">
+                <div className="meta-item">
+                  <span className="meta-label">Detection</span>
+                  <span className="meta-value">{incident.type?.replace('_', ' ').toUpperCase()}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">Confidence</span>
+                  <span className="meta-value">{incident.accuracy?.toFixed(1)}%</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">Location</span>
+                  <span className="meta-value">{incident.lat?.toFixed(5)}, {incident.lng?.toFixed(5)}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">Camera Source</span>
+                  <span className="meta-value">{role === 'authority' ? incident.bus_id : 'Public Safety Camera'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
