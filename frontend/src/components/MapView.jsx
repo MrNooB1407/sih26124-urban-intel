@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { MapContainer, TileLayer, Polyline, CircleMarker, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, CircleMarker, Marker, Popup, useMap, LayersControl, LayerGroup } from 'react-leaflet'
 import L from 'leaflet'
 import IncidentDetail from './IncidentDetail'
 
@@ -139,62 +139,80 @@ export default function MapView({ incidents, busPositions, trafficZones, onIncid
         
         <MapUpdater center={center} />
 
-        {/* Base Route */}
-        <Polyline 
-          positions={ROUTE_WAYPOINTS} 
-          pathOptions={{ color: 'blue', weight: 3, opacity: 0.6, dashArray: '5, 10' }} 
-        />
-
-        {/* Traffic Overlay */}
-        {ROUTE_WAYPOINTS.slice(0, -1).map((pt1, i) => {
-          const pt2 = ROUTE_WAYPOINTS[i + 1]
-          // Check if there is a traffic zone for this segment
-          const zone = trafficZones.find(z => z.segment_index === i)
-          if (zone) {
-            return (
-              <Polyline
-                key={`traffic-${i}`}
-                positions={[pt1, pt2]}
-                pathOptions={{ 
-                  color: trafficColors[zone.density_level] || trafficColors.normal, 
-                  weight: 6, 
-                  opacity: 0.8 
-                }}
+        <LayersControl position="topright">
+          <LayersControl.Overlay checked name="Base Routes">
+            <LayerGroup>
+              <Polyline 
+                positions={ROUTE_WAYPOINTS} 
+                pathOptions={{ color: 'blue', weight: 3, opacity: 0.6, dashArray: '5, 10' }} 
               />
-            )
-          }
-          return null
-        })}
+            </LayerGroup>
+          </LayersControl.Overlay>
 
-        {/* Incidents */}
-        {incidents.map(inc => (
-          <IncidentMarker
-            key={inc.id}
-            inc={inc}
-            isSelected={inc.id === selectedId}
-            onIncidentClick={onIncidentClick}
-          />
-        ))}
+          <LayersControl.Overlay checked name="Traffic Density">
+            <LayerGroup>
+              {ROUTE_WAYPOINTS.slice(0, -1).map((pt1, i) => {
+                const pt2 = ROUTE_WAYPOINTS[i + 1]
+                const zone = trafficZones.find(z => z.segment_index === i && z.route_name === 'Secunderabad-HITEC')
+                if (zone) {
+                  return (
+                    <Polyline
+                      key={`traffic-${i}`}
+                      positions={[pt1, pt2]}
+                      pathOptions={{ 
+                        color: trafficColors[zone.density_level] || trafficColors.normal, 
+                        weight: 6, 
+                        opacity: 0.8 
+                      }}
+                    />
+                  )
+                }
+                return null
+              })}
+            </LayerGroup>
+          </LayersControl.Overlay>
 
-        {/* Buses */}
-        {isAuthority && Object.values(busPositions).map(bus => (
-          <Marker 
-            key={bus.bus_id} 
-            position={[bus.lat, bus.lng]}
-            icon={createBusIcon(bus.bus_id)}
-          >
-            <Popup>
-              <strong>{bus.bus_id}</strong><br/>
-              Speed: {bus.speed?.toFixed(1) || 0} km/h<br/>
-              Route: {bus.route_name || 'N/A'}
-            </Popup>
-          </Marker>
-        ))}
+          <LayersControl.Overlay checked name="Live Incidents">
+            <LayerGroup>
+              {incidents.map(inc => (
+                <IncidentMarker
+                  key={inc.id}
+                  inc={inc}
+                  isSelected={inc.id === selectedId}
+                  onIncidentClick={onIncidentClick}
+                />
+              ))}
+            </LayerGroup>
+          </LayersControl.Overlay>
 
-        {/* Bus routes - currently hardcoded route for demo */}
-        {isAuthority && (
-          <Polyline positions={ROUTE_WAYPOINTS} color="#00ffcc" weight={3} opacity={0.5} />
-        )}
+          {isAuthority && (
+            <LayersControl.Overlay checked name="Live Fleet">
+              <LayerGroup>
+                {Object.values(busPositions).map(bus => (
+                  <Marker 
+                    key={bus.bus_id} 
+                    position={[bus.lat, bus.lng]}
+                    icon={createBusIcon(bus.bus_id)}
+                  >
+                    <Popup>
+                      <strong>{bus.bus_id}</strong><br/>
+                      Speed: {bus.speed?.toFixed(1) || 0} km/h<br/>
+                      Route: {bus.route_name || 'N/A'}
+                    </Popup>
+                  </Marker>
+                ))}
+              </LayerGroup>
+            </LayersControl.Overlay>
+          )}
+
+          {isAuthority && (
+            <LayersControl.Overlay checked name="Fleet Routes">
+              <LayerGroup>
+                <Polyline positions={ROUTE_WAYPOINTS} color="#00ffcc" weight={3} opacity={0.5} />
+              </LayerGroup>
+            </LayersControl.Overlay>
+          )}
+        </LayersControl>
 
       </MapContainer>
       <MapLegend />
