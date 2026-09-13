@@ -488,3 +488,109 @@ export function SystemStatusBar({ wsConnected, busPositions, incidents, isAuthor
     </div>
   );
 }
+
+export function InsightCards({ incidents, trafficZones, busPositions, isAuthority, onActionClick }) {
+  const insights = [];
+
+  // 1. Critical Accident
+  const criticalAccident = (incidents || []).find(i => i.type === 'accident' && i.severity === 'critical');
+  if (criticalAccident) {
+    insights.push({
+      id: 'critical_accident',
+      type: 'critical',
+      title: 'Critical Accident Detected',
+      description: 'A critical accident has been reported. Immediate incident review is recommended.',
+      actionText: 'Review Incident',
+      actionData: criticalAccident
+    });
+  }
+
+  // 2. High Traffic Density
+  const highDensityZones = (trafficZones || []).filter(z => z.density_level === 'high');
+  const routeCounts = {};
+  highDensityZones.forEach(z => {
+    routeCounts[z.route_name] = (routeCounts[z.route_name] || 0) + 1;
+  });
+  const congestedRoute = Object.keys(routeCounts).find(route => routeCounts[route] > 1);
+  if (congestedRoute) {
+    let trafficActionData = null;
+    const activeBuses = Object.values(busPositions || {});
+    const congestedBus = activeBuses.find(b => b.route_name === congestedRoute);
+    if (congestedBus) {
+      trafficActionData = { lat: congestedBus.lat, lng: congestedBus.lng, id: 'traffic_focus' };
+    }
+
+    insights.push({
+      id: 'traffic_congestion',
+      type: 'warning',
+      title: 'High Traffic Density',
+      description: `Multiple high-density zones detected on ${congestedRoute}. Consider traffic management or alternate routing.`,
+      actionText: 'View Traffic',
+      actionData: trafficActionData
+    });
+  }
+
+  // 3. Repeated Fleet Violations (Authority Only)
+  if (isAuthority) {
+    const overspeeding = (incidents || []).filter(i => i.type === 'overspeeding');
+    const busCounts = {};
+    const busIncidents = {};
+    overspeeding.forEach(i => {
+      busCounts[i.bus_id] = (busCounts[i.bus_id] || 0) + 1;
+      busIncidents[i.bus_id] = i; // keep the latest one
+    });
+    const repeatOffender = Object.keys(busCounts).find(bus_id => busCounts[bus_id] >= 2);
+    if (repeatOffender) {
+      insights.push({
+        id: 'fleet_violations',
+        type: 'warning',
+        title: 'Repeated Speed Violations',
+        description: `Bus ${repeatOffender} has logged multiple overspeeding incidents. Review operator activity.`,
+        actionText: 'Review Incident',
+        actionData: busIncidents[repeatOffender]
+      });
+    }
+  }
+
+  // 4. Infrastructure Attention
+  const potholes = (incidents || []).filter(i => i.type === 'pothole');
+  if (potholes.length >= 3) {
+    insights.push({
+      id: 'infrastructure',
+      type: 'info',
+      title: 'Infrastructure Attention',
+      description: 'Elevated pothole incidents detected. A maintenance assessment is recommended.',
+      actionText: 'Review Hazards',
+      actionData: potholes[0]
+    });
+  }
+
+  // Take max 2 insights
+  const displayInsights = insights.slice(0, 2);
+
+  if (displayInsights.length === 0) return null;
+
+  return (
+    <div className="insight-cards-container">
+      {displayInsights.map(insight => (
+        <div key={insight.id} className={`insight-card insight-${insight.type}`}>
+          <div className="insight-content">
+            <h4>{insight.title}</h4>
+            <p>{insight.description}</p>
+          </div>
+          <button 
+            className="insight-action-btn"
+            onClick={() => {
+              if (insight.actionData && onActionClick) {
+                onActionClick(insight.actionData);
+              }
+            }}
+            disabled={!insight.actionData}
+          >
+            {insight.actionText}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
